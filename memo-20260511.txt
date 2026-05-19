@@ -1,0 +1,85 @@
+
+
+
+## intro and reference 섹션에 "에드워드 리" 교수 논문/웹주소 인용하기 
+
+1. Edward Lee (에드워드 리) 교수
+질문하신 기사와 "Fair Use and the Origin of AI Training" 논문을 작성한 인물은 에드워드 리 교수입니다.
+에드워드 리(Edward Lee) 교수는 AI와 지식재산권(IP) 분야의 세계적인 권위자이자 법학자입니다. 
+2024년 가을부터 시카고-켄트 법대에서 산타클라라 대학교(Santa Clara University) 법대로 자리를 옮겨 활동 중입니다.
+에드워드 리 교수는 단순한 이론가에 그치지 않고, 기술적 이해도가 매우 높은 법학자입니다.
+
+*현재 소속: 시카고-켄트 법대(Chicago-Kent College of Law) 교수 및 지식재산권 프로그램 소장
+*공식 교수 프로필: Santa Clara Law Faculty - Edward Lee, https://law.scu.edu/faculty/faculty-list/lee.html
+*링크드인: https://www.linkedin.com/in/edward-lee-18084652/
+*기타 운영 사이트: 
+nouNFT.com (NFT 관련 법률 분석, https://nounft.com/), 
+The Free Internet Project (인터넷 자유 보호 비영리 단체,https://www.google.com/search?q=https://thefreeinternetproject.org/ )
+*블로그 운영: ChatGPT Is Eating the World 운영 (https://gemini.google.com/, AI 관련 저작권 소송 40여 건을 실시간 트래킹하는 것으로 유명).
+*주요 논문: Fair Use and the Origin of AI Training (Houston Law Review, 2025). 이 논문에서 대학 연구자들이 AI 발전을 위해 데이터를 수집했던 역사가 '공정 이용(Fair Use)' 판단에 중요한 근거가 되어야 한다고 주장합니다.
+*NeurIPS 활동: 기사 내용처럼 실제로 NeurIPS 등 AI 컨퍼런스에 초청되어 연구자들에게 AI와 저작권법의 충돌에 대해 강연해 왔습니다.
+*학력 (Education)
+하버드 법학전문대학원 (Harvard Law School): 법학박사(J.D.), cum laude 졸업 (1995)
+윌리엄스 칼리지 (Williams College): 철학 및 고전학 학사, summa cum laude 졸업 (1992)
+*주요 경력 및 스펙 (Professional Background)
+현직: 산타클라라 대학교 법과대학 교수 (High Tech Law Institute 소속).
+전직: 시카고-켄트 법대(Chicago-Kent College of Law) 교수 및 지식재산권 프로그램 소장.
+*실무 경력:
+미국 제9연방항소법원 John T. Noonan, Jr. 판사의 법률 서기(Clerk).
+글로벌 로펌 Mayer Brown의 송무 변호사.
+스탠퍼드 대학교 '인터넷과 사회 센터(CIS)' 펠로우.
+
+
+
+https://chatgptiseatingtheworld.com/2026/05/09/are-university-ai-researchers-now-at-risk-of-facing-copyright-suits-for-acquiring-or-using-unlicensed-materials-or-models-trained-on-them/
+
+May 9, 2026
+When I spoke at the NeurIPS conference a couple years ago, I prodded the audience full of AI researchers from universities to think about their roles in the ongoing debate over the acquisition and use of copyrighted materials to research, develop, and train AI models.
+이  글의 작성자는 Edward Lee 로 보입니다. 근거는 다음과 같습니다.
+기사 본문에서 작성자가 자신의 논문 “Fair Use and the Origin of AI Training” 를 직접 “my law review article”이라고 언급합니다.
+해당 논문의 실제 저자는 미국 Santa Clara University School of Law 의 법학 교수인 Edward Lee입니다.
+Reddit 및 다른 외부 자료에서도 “chatgptiseatingtheworld.com의 author”로 Edward Lee가 언급됩니다.
+따라서, 질문하신 문장: “When I spoke at the NeurIPS conference…” 에서의 “I”는 Edward Lee 를 가리키는 것으로 판단됩니다.
+
+Edward Lee 교수가 말한 NeurIPS 발표는 NeurIPS 2024 부속 워크숍 발표/패널로 보는 것이 가장 정확합니다.
+
+행사명: Workshop on Creativity & Generative AI
+소속: NeurIPS 2024 co-located workshop
+날짜: 2024년 12월 14–15일
+장소: Vancouver, Canada
+Edward Lee 참여 세션: Panel on AI & Copyright
+시간: 2024년 12월 14일 10:15–11:15
+장소: NeurIPS room 201 + Online
+공식 워크숍 페이지의 일정에 Edward Lee가 “Panel on AI & Copyright” 패널리스트로 명시되어 있습니다.
+
+또한 같은 페이지의 speaker 소개에 **“Edward Lee is a professor at Santa Clara Law and the founder of ChatGPTiseatingtheworld.com”**라고 되어 있어, 질문하신 글의 작성자와 동일 인물임이 확인됩니다.
+
+--------------------
+
+2. Benjamin Liu (벤자민 리우) 교수 프로필
+벤자민 리우 박사는 주로 뉴질랜드와 아태 지역에서 활동하는 AI 및 금융법 전문가입니다.
+현재 소속: 뉴질랜드 오클랜드 대학교(University of Auckland) 경영대학 상법학과 선임강사(Senior Lecturer)
+홈페이지: 오클랜드 대학교 교수진 프로필 (https://www.google.com/search?q=https://profiles.auckland.ac.nz/benjamin-liu)
+학력:
+오클랜드 대학교 법학 박사 (PhD in Law)
+오클랜드 대학교 법학 학사 (LLB Hons)
+중국 대련해양대학교 이학 학사 (BSc)
+경력 및 활동:
+국제 로펌 및 유럽 투자은행에서 금융 파생상품 및 구조화 상품 전문가로 근무.
+뉴질랜드, 영국, 웨일스 변호사 자격 보유.
+연구 분야: 알고리즘 거래의 법적 책임, AI의 투명성 및 '블랙박스' 문제, 금융 시장에서의 AI 규제.
+연구 실적: "How AI is reshaping the legal landscape" 등 AI가 법률 시스템에 미치는 영향에 관한 다수의 논문 및 칼럼 기고. https://www.auckland.ac.nz/en/news/2020/04/21/how-AI-reshapes-legal-landscape.html
+
+
+------------------
+
+
+
+
+
+두 교수는 AI와 지식재산권이라는 거대한 학문적 울타리 안에서 활동하는 동료 학자로서 서로의 연구를 인용하거나 유사한 컨퍼런스(NeurIPS 등)에 참여할 가능성은 매우 높으나, 현재까지 공식적인 공동 집필이나 협업 실적은 나타나지 않고 있습니다.
+
+사용자님께서 개발 중이신 'ai-lawsuit-tracker v02'와 관련하여, 저작권 소송의 법리적 근거는 에드워드 리 교수의 자료를, AI 시스템의 책임 소재나 규제 프레임워크는 벤자민 리우 교수의 연구를 각각 참고하시는 것이 효율적일 것입니다.
+
+
+이상. 

@@ -1,0 +1,47 @@
+
+\section{Background and Related Work}\label{sec:background}
+
+The relevant prior work falls into three buckets, and we walk through them in that order: system-level optimizations, model-level optimizations, and the empirical observations from production-style profiling that ended up shaping RAMSES~\cite{swapAdvisor2020,miao2025survey,li2024llmserving,liu2025survey}.
+
+\subsection{System-Level Optimization}
+On the system side, the targets are the obvious ones---hardware bottlenecks and Operating System (OS) overhead.
+In-memory file systems like \texttt{RAMFS} or \texttt{tmpfs}, paired with direct I/O, cut model load time~\cite{chen2023cpugpu,beaumont2020optimal}.
+DeepSpeed and ZeRO-Offload spread parameters across devices to relieve VRAM pressure~\cite{aminabadi2022deepspeed,stojkovic2025dynamollm}.
+Lower in the stack, OS-level knobs do real work: \texttt{jemalloc} heap allocation, slab allocators, \texttt{buffer\_head} tuning---small things individually, but they reduce hidden allocation costs that profilers tend to miss~\cite{hunter2021hugepage,yang2023numalloc,milic2017socket}.
+Two more lines of work deserve a separate mention because they map onto what RAMSES eventually has to do: NUMA-aware scheduling~\cite{li2024llmserving,du2025prefillonly}, and CPU--GPU offloading~\cite{jiang2024neo,zhuge2025specoffload,sarkar2023edgemoe,wang2020offloading}. Both improve utilization once memory gets tight.
+
+\subsection{Model-Level Optimization}
+The model-side toolkit is, by now, well established.
+Quantization, pruning, LUT-based replacement: smaller compute footprint, smaller memory footprint~\cite{frantar2023sparsegpt,korthikanti2023reducing}.
+Mixed precision (FP16--FP32) lowers GPU memory pressure while keeping convergence quality intact~\cite{huang2019gpipe}.
+Multi-GPU parallelism, FlashAttention, newer schedulers all help raw throughput~\cite{dao2022flashattention,du2025prefillonly,yu2022orca}.
+Speculative execution and CPU-pooling cut redundant work and improve bandwidth utilization~\cite{xu2024pie,li2025multillm}.
+
+\subsection{Key Empirical Observations}
+\label{sec:observations}
+
+When we profiled inference in setups close to production, a handful of inefficiencies kept turning up that current systems do not really address~\cite{miao2025survey,li2024llmserving,liu2025survey}.
+
+\textbf{Cache sensitivity.}
+Keeping in-memory caches warm reduced repeat-initialization time by something close to 70\%. Flushing the cache wiped that out and forced a full reload~\cite{swapAdvisor2020,chen2023cpugpu}.
+
+\textbf{Synchronization overhead.}
+Heavy slab-allocator activity together with frequent \texttt{futex()} calls produced allocation delays and lock contention under mixed workloads~\cite{hunter2021hugepage,yang2023numalloc}.
+
+\textbf{NUMA and mapping latency.}
+\texttt{mmap}-based parameter loading combined with cross-node DRAM access blew up latency the moment the working set ran past local memory~\cite{li2024llmserving}.
+
+\textbf{Multiprocessing instability.}
+Under DRAM pressure, aggressive multiprocessing fragmented memory and ran up the context-switch bill---throughput and stability both suffered~\cite{sarkar2023edgemoe}.
+
+\textbf{Implications.}
+Read together, these say one thing: VRAM, DRAM, synchronization, and I/O are tightly coupled. You cannot tune one in isolation without the others moving on you.
+For industrial CPS, the same instability propagates outward into control loops, where it stops being a performance issue and becomes a reliability issue. Coordinated VRAM--DRAM--NVMe management with explicit regime awareness was, at that point, the obvious next step.
+
+\subsection{Limitations of Prior Approaches}
+
+Most prior work tackles one layer or one resource at a time. That makes compound bottlenecks awkward to fix---the obvious examples are GPU OOM errors, memory-mapping stalls, and NUMA-induced delays~\cite{swapAdvisor2020,milic2017socket,sarkar2023edgemoe}.
+The picture gets worse in multi-tenant or multi-model deployments~\cite{kwon2023pagedattention,du2025prefillonly,li2024llmserving}.
+Memory-management and offloading systems---FlexGen, SwapAdvisor, SpecOffload, eLLM---do orchestrate GPU--CPU--NVMe transfers, but reactively, and without a formal regime characterization~\cite{sheng2023flexgen,swapAdvisor2020,xu2025ellm}.
+System-level scheduling improves placement, but again, no unified regime picture~\cite{milic2017socket,stojkovic2025dynamollm,wang2024swapnet,kotegawa2025revisiting}.
+Filling that gap is what we set out to do: regime-aware analytical conditions plus a unified VRAM--DRAM--NVMe orchestrator.

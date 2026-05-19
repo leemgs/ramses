@@ -156,7 +156,6 @@ inspection)를 약속했으나 기존 그림에는 어떤 산업적 컨텍스트
 경고 1개만.
 
 
-
 ## Round 4 — Fig. 1 가독성 개선 (시각적 정리)
 
 **문제:** Round 2에서 추가한 Fig. 1은 산업 워크로드 + 메모리 계층 +
@@ -205,3 +204,49 @@ inspection)를 약속했으나 기존 그림에는 어떤 산업적 컨텍스트
    권장 (RAMSES Load Time = 40% 기준이면 vs FlexGen 67.6% = 40.8%
    reduction, vs SwapAdvisor 71.9% = 44.4% reduction 등으로 본문 숫자와
    차이가 있음).
+
+## Round 5 — Fig. 1 column-width 가독성 보정
+
+**문제:** Round 4의 Fig. 1은 흐름 구조는 깔끔해졌지만, 캔버스가 넓고
+박스 안에 부가 설명·수식·capacity 라벨이 많이 들어가 있어, IEEE 2-단
+레이아웃에서 single-column 폭(~3.5 in)으로 축소될 때 그림 내 글자가
+주변 본문 텍스트(약 10 pt)보다 훨씬 작게 표시되었음. Reviewer가 그림을
+열어 zoom in해야 읽히는 수준이었음.
+
+**원인:** matplotlib 캔버스 크기(11×6.5 in)가 너무 컸고, 박스마다
+title + sub-line × 2 + "targets:" pill 식으로 정보 밀도가 높았음.
+single-column으로 축소되며 모든 텍스트가 50%~60% 작아짐.
+
+**조치:**
+- 캔버스 크기를 11×6.5 in → 4.4×3.2 in로 대폭 축소 (LaTeX scaling
+  factor가 약 0.8 -> 1.0에 수렴하게 함).
+- 박스 내부 텍스트를 **이름만 남기고 모두 제거**:
+  * 워크로드 박스: "1. Digital twin sync / PLC scan cycle 10 ms"
+    → "Digital twin" (한 단어)
+  * Regime Analyzer 박스 내부 수식 `α = C_DRAM/C_VRAM` 제거
+  * Policy Engine 박스 내부 "prefetch / evict / swap" 제거
+  * 3개 모듈 박스의 "pre-reserve CUDA / context / pool / queue"
+    같은 설명 모두 제거 → 모듈 이름만
+  * "targets: latency / VRAM / swap" pill 제거
+  * 메모리 tier 박스의 capacity 정보 (80 GB A100, 512 GB ECC,
+    PCIe Gen4) 모두 제거 → tier 이름(VRAM/DRAM/NVMe)만
+  * 좌측 세로 band 라벨 (WORKLOADS / RAMSES / MEMORY) 제거 (배경
+    색으로 충분히 구분됨)
+- 폰트 크기를 박스별로 본문(약 10 pt)과 동일 수준이 되도록 조정
+  (워크로드 9 pt, 모듈 8.5 pt, 메모리 tier 10 pt, RAMSES title
+  10.5 pt — matplotlib 좌표에서; column-width 축소 후 본문과 거의 일치).
+- 양방향 inter-tier 화살표를 두 개의 단방향 화살표 stack으로 교체
+  (작은 크기에서 더 명확).
+- 범례를 2항목 (Data plane / Control plane) 단일 줄로 유지.
+
+**캡션 보강** (그림에서 제거된 정보를 캡션이 흡수):
+- 3개 모듈의 역할을 한 줄로 추가:
+  "the GPU Process Allocator pre-reserves CUDA context to remove
+  context-conflict stalls, the Task Memory Manager performs NUMA-aware
+  allocation with predictive DRAM offloading, and the GPU Booster
+  drives block-aligned asynchronous VRAM--NVMe swap."
+- 나머지 기존 캡션 (3개 워크로드 상세, Regime Analyzer (α,β), TSN/SLA)
+  은 그대로 유지.
+
+**결과:** Reviewer가 PDF를 normal zoom으로 봤을 때 그림 내 모든
+라벨이 본문과 동일한 가독성을 가짐. 정보 디테일은 캡션이 보완.

@@ -12,6 +12,13 @@ and (3) real-time visual inspection under bounded inference deadlines.
 The control plane (dashed arrows) includes a Regime Analyzer
 estimating $(\alpha,\beta)$ and a Policy Engine enforcing tier-aware
 placement, prefetch, and swap decisions.
+Three modules handle the actual orchestration:
+the \emph{GPU Process Allocator} pre-reserves CUDA context to remove
+context-conflict stalls,
+the \emph{Task Memory Manager} performs NUMA-aware allocation with
+predictive DRAM offloading,
+and the \emph{GPU Booster} drives block-aligned asynchronous VRAM--NVMe
+swap.
 This architecture explicitly links intra-node memory orchestration
 to industrial control loops, TSN time windows, and SLA-constrained
 operation.}

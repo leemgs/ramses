@@ -80,3 +80,20 @@ The second pass distinguishes **manuscript correction** from **evidentiary compl
 ### Verdict
 
 The revision fixes the most serious **logical and safety-related defects**, but it does **not** yet reflect all reviewer requests empirically. Submission should be held until the items marked “Not complete” are supplied with real data, or the corresponding quantitative claims/figures are removed. No missing measurement should be reconstructed or invented from normalized plots.
+
+## Execution attempt and artifact provenance
+
+A repository-wide executable-file audit found only `artifact/generate_trace.py`; no RAMSES runtime or raw measurement files are present in this manuscript repository. The closest accessible implementation is `leemgs/mball` commit `f4bd8198a941da81f28b1462885e37185e33773e`. Inspection shows that its proof-of-concept explicitly mocks GPU allocation and describes disk swap as an example/emulation. It cannot substantiate GPUDirect Storage, partial reload, controller switching, the paper's baselines, or the reported measurements.
+
+The current execution host also has no `nvidia-smi`, CUDA device, PyTorch, NUMA/NVMe instrumentation suite, or synchronized whole-node power meter. GPU, GDS, HIL, and energy experiments therefore cannot be executed truthfully here. To make the missing work executable on a suitable host, this revision adds:
+
+- a strict JSONL measurement schema covering the four latency tasks and all requested model/energy counters;
+- a deterministic analyzer for median/P95/P99/P99.9/max, MAE/RMSE, hit rate, transferred bytes, energy/request, energy/token, and EDP;
+- a hardware/tool preflight that fails closed when prerequisites are absent; and
+- unit tests proving aggregation behavior without presenting fixture values as experiments.
+
+This infrastructure changes the status of reporting and instrumentation from “unspecified” to “specified and executable on the target testbed,” but it does not change absent measurements to “complete.”
+
+## Added release gates
+
+`BASELINE_MANIFEST.md` prevents baseline results from being treated as reproducible until immutable versions, patches, cache protocol, and tuning budgets are filled. `REFERENCE_AUDIT.md` records the four reviewer-identified metadata cases and prohibits marking them verified without primary-record evidence. These gates intentionally remain incomplete rather than filling unknown values with guesses.

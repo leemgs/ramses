@@ -18,6 +18,41 @@ Table~\ref{tab:baseline_comparison} captures the comparison scope.
 
 % =====================================================
 
+
+\subsection{Required Request-Level Reporting Protocol}
+\label{sec:latency_protocol}
+To prevent incompatible latency scales from being pooled, each raw record is
+assigned to exactly one task: \emph{scoring} (one forward pass, no generation),
+\emph{continuation} (one warm decode step), \emph{TTFT} (request arrival through
+first emitted token), or \emph{generation} (arrival through the final token).
+For every task and system, the artifact schema requires model, numerical
+precision, input/output tokens, batch size, concurrency, request count, and run
+identifier.  The supplied analyzer reports absolute median, P95, P99, P99.9,
+and maximum latency; it does not convert normalized bars into observations.
+A valid comparison uses at least five independently restarted runs, reports
+both cold- and warm-cache protocols, and retains failed requests in the
+failure-rate denominator.  The present repository contains no request-level
+records, so the detailed table requested by the reviewer cannot yet be
+populated without fabricating data.
+
+\subsection{Model, Policy, and Energy Instrumentation Protocol}
+Each request-level record can additionally carry measured $\alpha$, $\beta$,
+predicted latency, direction-specific effective bandwidth, storage queueing,
+prefetch hits/misses, and bytes read/written.  The analyzer computes residual,
+mean absolute error, root-mean-square error, and prefetch-hit rate.  The policy-
+off configuration must retain all three data-plane modules and fixed placement
+parameters while disabling only regime switching.  Paired runs must reuse the
+same request trace and seed.
+
+Whole-node energy must be sampled on the same monotonic clock as request and
+GPU telemetry.  Node energy is integrated without substituting NVML GPU energy
+for CPU, DRAM, or NVMe consumption; the report includes joules/request,
+joules/token, EDP, latency, and throughput.  Instrument model, sampling rate,
+clock alignment, idle subtraction, calibration uncertainty, and dropped
+samples must accompany each run.  The schema and analysis program are included
+under \texttt{artifact/}; actual A100, NVMe, NUMA, and power-meter measurements
+remain hardware-gated.
+
 \subsection{Experimental probes across memory-dominated regimes}
 
 Four metrics drive the evaluation:
@@ -66,7 +101,7 @@ Compared with the competing methods, latency reductions land between 7\% and 12\
 Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. The finite run records fewer failures, but the repository does not contain the raw time series or a stationarity-test script; we therefore do not claim statistical stationarity or a causal mechanism from these counts alone.
 
 % =====================================================
-\subsubsection{Long-Duration QoS under a Calibrated Synthetic Trace}
+\subsubsection{Long-Duration QoS under a Parameterized Synthetic Trace}
 The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  RAMSES records a 0.6\% miss fraction versus 8.7\% for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  P99 latency drift is $\pm3.2\%$ versus 18\% for the reference, with no observed CUDA restart in this finite run.
 
 % =====================================================

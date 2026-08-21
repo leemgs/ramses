@@ -19,9 +19,7 @@ the \emph{Task Memory Manager} performs NUMA-aware allocation with
 predictive DRAM offloading,
 and the \emph{GPU Booster} drives block-aligned asynchronous VRAM--NVMe
 swap.
-This architecture explicitly links intra-node memory orchestration
-to industrial control loops, TSN time windows, and SLA-constrained
-operation.}
+The diagram supplies workload motivation only; it does not depict a deployed control loop, TSN integration, or a validated hard deadline.}
 \label{fig:rameses_architecture}
 \end{figure}
 
@@ -163,7 +161,7 @@ The combined effect is that RAMSES can keep \textbf{17B-parameter models} servin
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/phase_diagram.png}
-\caption{Schematic operating map for the measured pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds, not feasibility, determinism, or stability guarantees; measured operating points and prediction residuals accompany the artifact.}
+\caption{Schematic operating map for the measured pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds, not feasibility, determinism, or stability guarantees; measured operating points and prediction residuals are required before this schematic can be treated as a validated predictor.}
 \label{fig:phase_diagram}
 \end{figure}
 
@@ -204,9 +202,7 @@ rounding is included in the measured volumes.  We call observations with
 $\alpha>1$ capacity-pressured and observations with $\beta\geq1$ transfer-
 pressured; the remaining points are coordination-sensitive.  These are
 operational labels, not theorems.  They neither imply zero swapping nor a
-worst-case bound.  Fig.~\ref{fig:phase_diagram} is therefore a schematic guide;
-measured points and prediction residuals are reported with the evaluation
-artifact.
+worst-case bound.  Fig.~\ref{fig:phase_diagram} is therefore only a schematic guide. Measured operating points and prediction residuals are not present in the repository and remain required before resubmission.
 
 \subsection{Online Policy and Complexity}\label{sec:controller}
 Every 200~ms the analyzer reads allocated bytes, transfer counters, queue
@@ -225,9 +221,7 @@ The reuse score is an exponentially weighted count of accesses over the last
 32 graph steps; it has no learned parameters or offline training.  Candidate
 maintenance costs $O(\log n)$ per tensor access for a heap of $n$ evictable
 tensors; sampling, regime classification, and a policy decision are $O(1)$,
-and metadata occupies $O(n)$.  A policy-off ablation retains all three data-
-plane modules but fixes prefetch depth and disables state switching, separating
-the controller from its mechanisms.  The reported 1.68~ms is mean controller
+and metadata occupies $O(n)$.  The required policy-off ablation would retain all three data-plane modules, fix prefetch depth, and disable state switching, thereby separating the controller from its mechanisms. Results for that experiment are not yet available.  The reported 1.68~ms is mean controller
 work per serving request and is not compatible with a 2~ms end-to-end claim;
 we therefore make no such claim.
 
@@ -264,6 +258,6 @@ Without GPU Booster    & 49.5$\pm$2.0\% & 25.4$\pm$1.5\% & 10.2$\pm$0.8\% \\
 \hline
 \end{tabular}
 \vspace{0.3ex}
-{\footnotesize Values are reported as mean $\pm$ standard deviation over five runs; 95\% confidence intervals are within $\pm$2.3\% for all entries.}
+{\footnotesize Values are author-reported mean $\pm$ standard deviation over five runs. Raw observations are required to recompute confidence intervals and statistical tests before submission.}
 \end{table}
 

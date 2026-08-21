@@ -6,14 +6,14 @@ This document records manuscript changes for a **new submission** following the 
 
 1. **Theory and asynchronous transfer — addressed in text.** The circular `alpha_critical` construction, theorem/lemma language, duplicate transfer equation, unsupported convexity, and variance proof were removed. The replacement model uses independent demand, capacity, cache-hit, bidirectional-volume, bandwidth, fixed-latency, queueing, and synchronization observations and a `max` term for overlap.
 2. **Real-time and safety claims — removed.** The paper now expressly disclaims deterministic latency, WCET, control-stability, TSN/PLC compatibility, and IEC 61508/SIL evidence. The former SIL table was deleted.
-3. **Industrial and scaling scope — narrowed.** The abstract and introduction label the 72-hour input as a statistically calibrated synthetic trace and the contribution as single-node laboratory serving. Unsupported 2 ms and 4/8-GPU claims were removed.
+3. **Industrial and scaling scope — narrowed.** The abstract and introduction label the 72-hour input as a parameterized synthetic trace and the contribution as single-node laboratory serving. Unsupported 2 ms and 4/8-GPU claims were removed.
 4. **Implementation/reproducibility — partially addressed.** Controller timing, state transitions, hysteresis, actions, objective, reuse estimator, and complexity are specified. An anonymized deterministic trace generator is included. A full runtime/baseline-port release and raw measurements remain mandatory pre-submission blockers.
 5. **Presentation — addressed where verifiable.** Duplicate equations and undefined alpha/beta/EDP context were corrected; claims and terminology were made consistent. Bibliographic metadata and numerical confidence intervals still require source-data verification by the authors.
 
 ## Reviewer 1
 
 - The two theorem claims were removed rather than overstated.
-- “Field result” wording was replaced by “statistically calibrated synthetic trace” in headline sections.
+- “Field result” wording was replaced by “parameterized synthetic trace” in headline sections.
 - The contribution is explicitly single-node; unsupported multi-GPU generalization was removed.
 - `artifact/generate_trace.py` is available during review rather than promised on acceptance.
 - The duplicated transfer equation was eliminated; the PDF is rebuilt as a clean document without track changes.
@@ -48,3 +48,35 @@ This document records manuscript changes for a **new submission** following the 
 ## Submission gate (must be completed by authors)
 
 Do not represent the current package as fully responsive until all bold “remain” items above are supplied. Most importantly: (a) release runtime and baseline ports, (b) add raw per-run latency/energy data and scripts, (c) run parameter and block-size sensitivity plus output equivalence, (d) add a reproducible named industrial task or further narrow the title, and (e) audit every bibliography record against its primary source.
+
+## Second-pass completeness audit (current repository)
+
+The second pass distinguishes **manuscript correction** from **evidentiary completion**. A reviewer request is not “addressed” merely because the response promises future work.
+
+| Reviewer request | Current status | Evidence / required action |
+|---|---|---|
+| R1: temper theorem language | Complete | Unsupported theorems and proofs were removed. |
+| R1: identify synthetic evidence in headline sections | Complete | Abstract, introduction, evaluation, and conclusion now say *parameterized synthetic*. |
+| R1: resolve single-node/fleet mismatch | Complete by scope reduction | Fleet and 4/8-GPU generalization removed. |
+| R1: release trace generation during review | Partial | Generator is present; reference samples, calibration/extraction procedure, and runtime are absent. |
+| R1: duplicate equation / clean PDF | Equation complete; PDF pending | Duplicate removed; TeX engine is needed to inspect final mathematics rendering. |
+| R2-1/2: abstract, conclusion, contribution clarity | Complete in prose | Challenges, modules, scope, and headline percentages are explicit. Percentages remain author-reported pending raw data. |
+| R2-3/4: assumptions and real-world applicability | Partial | Variables and non-safety limitations are explicit; real deployment/HIL evidence is absent. |
+| R2-5: state-of-the-art comparison | Partial | Systems are discussed, but exact commits, faithful ports, tuning budgets, and raw comparative runs are absent. |
+| R2-6: parameter selection and sensitivity | Not complete | Parameters are documented, but no sensitivity experiment exists. |
+| R2-7: complexity | Complete analytically | Decision, heap, and metadata complexity are stated. |
+| R2-8/10: figures and percentages | Not complete | Existing normalized figures lack raw points, uncertainty, and a measured phase-boundary/residual plot. |
+| R2-9: undefined symbols | Substantially complete | Alpha, beta, EDP, and model terms are defined; final compiled symbol audit remains advisable. |
+| R3-1: latency task taxonomy and absolute percentiles | Not complete | Contradictory 2 ms claim is removed, but per-task model/precision/length/batch/concurrency/count and median/P95/P99/P99.9/max table is absent. |
+| R3-2/3: rebuild and validate model | Model rewritten; validation incomplete | Independent variables and overlap are modeled; measured boundary points, bidirectional bandwidth, hit/miss data, queueing, and prediction error are absent. |
+| R3-4/5: WCET/control/SIL | Complete by removal | All certification and stability claims/tables removed and explicitly disclaimed. |
+| R3-6: controller specification and policy ablation | Specification complete; experiment absent | Estimator, states, actions, hysteresis, complexity defined; policy-off result is not available. |
+| R3-7: implementation details/artifact | Not complete | Runtime, API interception/framework modifications, storage path/driver registration, concurrency, output equivalence, and 4 MB sensitivity are absent. |
+| R3-8: reproducible industrial task | Not complete | No named dataset, prompts, vision resolution, accuracy, PLC/TSN, plant, or HIL task is provided. |
+| R3-9: baseline/statistics compatibility | Not complete | Llama-4/vLLM patch, versions/commits, cache protocol, raw runs, uncertainty scripts, and statistical tests are absent. |
+| R3-10: bibliography audit | Not complete | Every primary record and sentence-level citation support still requires verification. |
+| R3-11: whole-node energy | Not complete | GPU-only NVML results are scoped correctly, but synchronized CPU/DRAM/NVMe/GPU energy and uncertainty are absent. |
+
+### Verdict
+
+The revision fixes the most serious **logical and safety-related defects**, but it does **not** yet reflect all reviewer requests empirically. Submission should be held until the items marked “Not complete” are supplied with real data, or the corresponding quantitative claims/figures are removed. No missing measurement should be reconstructed or invented from normalized plots.

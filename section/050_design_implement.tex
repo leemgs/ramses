@@ -134,7 +134,7 @@ The \textbf{GPU Booster with swap support} design targets this bottleneck by sel
 Conventional offloading typically pays a noticeable transfer cost, and OS-level swapping is unaware of GPU memory semantics, which limits how well it can do.
 The intended mechanism uses execution-graph reuse distance to rank candidates, asynchronous queues to overlap transfer and compute, and configurable block alignment. Algorithm~\ref{alg:gbooster_en} is therefore design pseudocode rather than a claim that an unmodified framework can provide tensor-level partial reload through \texttt{LD_PRELOAD}. A complete artifact must identify intercepted APIs or framework patches, CUDA/GDS and filesystem versions, buffer registration, metadata locking, cancellation and failure recovery, and output equivalence.
 
-The combined effect is that RAMSES can keep \textbf{17B-parameter models} serving on memory-constrained GPUs while holding swap-induced latency to a minimum \cite{kwon2023pagedattention}. Algorithm~\ref{alg:gbooster_en} pins down the swap-aware asynchronous control flow, including the selective tensor identification, block-aligned DMA transfer, and partial reload after a cache miss.
+The design target is to serve models whose state exceeds VRAM capacity while reducing exposed transfer latency. Algorithm~\ref{alg:gbooster_en} documents the proposed control flow; it is not experimental evidence of direct DMA or partial reload. Those mechanisms and their output equivalence must be validated by the missing runtime artifact.
 \begin{algorithm}[t]
 \caption{GPU Booster with Swap Support Pseudocode}
 \label{alg:gbooster_en}

@@ -9,7 +9,7 @@ The contributions are:
 \begin{itemize}
 \item \emph{An overlap-aware operating model} that separates workload demand, cache/prefetch reuse, bidirectional transfer volume, fixed and queueing delays, effective bandwidth, and synchronization. Its pressure ratios classify measured operating points without circular thresholds or convexity and stability claims.
 \item \emph{A specified controller} with a 200~ms sampling interval, 5\% hysteresis, three-sample switching rule, explicit actions in every state, admission control, and $O(\log n)$ candidate maintenance.
-\item \emph{A single-node implementation} combining CUDA resource preallocation, NUMA-local allocation, and asynchronous NVMe transfer, together with module ablations; a policy-off experiment is specified as required follow-up work.
+\item \emph{A single-node design and proof of concept} combining resource preallocation, NUMA-local allocation, and an asynchronous-transfer policy. Production CUDA/GDS integration and the policy-off experiment remain required validation work.
 \item \emph{Reproducible empirical evaluation} against memory-serving baselines, reporting up to 60\% lower load time, 35\% lower latency, 15\% lower peak VRAM, and 18.5\% higher GPU throughput per watt. The 72-hour workload is explicitly identified as a parameterized synthetic trace, and its generator is included with the review artifact.
 \end{itemize}
 

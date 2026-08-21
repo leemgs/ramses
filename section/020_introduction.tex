@@ -1,7 +1,7 @@
 \section{Introduction}\label{sec:introduction}
 \IEEEPARstart{M}{ODEL} serving becomes a memory-systems problem when parameters and key--value state exceed accelerator memory. Requests then couple GPU video RAM (VRAM), host dynamic RAM (DRAM), NVMe bandwidth, queueing, and synchronization. A policy that helps one configuration can hurt another because the active bottleneck changes with working-set demand, reuse, concurrency, and transfer direction.
 
-This issue matters for industrial analytics such as inspection, predictive maintenance, and digital-twin support, where sustained availability and energy budgets are important. Our evidence, however, is a laboratory single-node evaluation driven partly by a statistically calibrated synthetic arrival trace; it is not a factory field trial or a hard-real-time control-loop evaluation. We consequently report deadline misses only as Quality of Service (QoS), make no 2~ms or Time-Sensitive Networking compliance claim, and do not map request misses to IEC~61508 Safety Integrity Levels.
+This issue matters for industrial analytics such as inspection, predictive maintenance, and digital-twin support, where sustained availability and energy budgets are important. Our evidence, however, is a laboratory single-node evaluation driven partly by a parameterized synthetic arrival trace; it is not a factory field trial or a hard-real-time control-loop evaluation. We consequently report deadline misses only as Quality of Service (QoS), make no 2~ms or Time-Sensitive Networking compliance claim, and do not map request misses to IEC~61508 Safety Integrity Levels.
 
 Prior systems optimize paging, GPU--CPU offload, or request scheduling. RAMSES instead coordinates the VRAM--DRAM--NVMe path within one node while observing occupancy separately from actual bidirectional traffic. The design uses a lightweight state machine to choose admission, prefetch, and eviction actions rather than treating an analytical boundary as a guarantee.
 
@@ -9,8 +9,8 @@ The contributions are:
 \begin{itemize}
 \item \emph{An overlap-aware operating model} that separates workload demand, cache/prefetch reuse, bidirectional transfer volume, fixed and queueing delays, effective bandwidth, and synchronization. Its pressure ratios classify measured operating points without circular thresholds or convexity and stability claims.
 \item \emph{A specified controller} with a 200~ms sampling interval, 5\% hysteresis, three-sample switching rule, explicit actions in every state, admission control, and $O(\log n)$ candidate maintenance.
-\item \emph{A single-node implementation} combining CUDA resource preallocation, NUMA-local allocation, and asynchronous NVMe transfer, together with module and policy-off ablations.
-\item \emph{Reproducible empirical evaluation} against memory-serving baselines, reporting up to 60\% lower load time, 35\% lower latency, 15\% lower peak VRAM, and 18.5\% higher GPU throughput per watt. The 72-hour workload is explicitly identified as a calibrated synthetic trace, and its generator is included with the review artifact.
+\item \emph{A single-node implementation} combining CUDA resource preallocation, NUMA-local allocation, and asynchronous NVMe transfer, together with module ablations; a policy-off experiment is specified as required follow-up work.
+\item \emph{Reproducible empirical evaluation} against memory-serving baselines, reporting up to 60\% lower load time, 35\% lower latency, 15\% lower peak VRAM, and 18.5\% higher GPU throughput per watt. The 72-hour workload is explicitly identified as a parameterized synthetic trace, and its generator is included with the review artifact.
 \end{itemize}
 
 The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.

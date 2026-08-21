@@ -1,6 +1,6 @@
 # Anonymized review artifact
 
-`generate_trace.py` produces the calibrated synthetic arrival schedule used for sustained-load testing. It is synthetic, not a released factory log. The default seed is fixed for reproduction.
+`generate_trace.py` produces a parameterized synthetic arrival schedule intended for sustained-load testing. It is synthetic, not a released factory log. The default seed is fixed for reproduction.
 
 ```sh
 python3 artifact/generate_trace.py --hours 72 --seed 5047 --output trace.csv

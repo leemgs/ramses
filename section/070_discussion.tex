@@ -29,7 +29,7 @@ In real industrial deployments, rack-level PDU or three-phase meters pick up coo
 
 A few things we want to be honest about.
 First, the evaluation is single-node. Multi-node and cross-fabric deployments---NVLink or InfiniBand clusters, for example---may introduce extra communication-induced regime shifts that we have not characterized here.
-Second, the 72-hour industrial trace is statistically validated (KS $D=0.043$, KL-div $=0.018$~nats), but it is still synthetic. The non-stationary dynamics of fully proprietary factory traces may need additional calibration on top of what we did.
+Second, the 72-hour trace is synthetic and the available artifact lacks factory reference samples. We therefore withdraw distribution-fidelity claims; real traces may require a different arrival model and calibration procedure.
 Third, energy measurement here is based on NVML telemetry that we cross-validated against an external PDU (Kendall $\tau=1.0$). Rack-level or facility-level overheads (cooling, PSU inefficiencies) are not captured.
 
 Three directions look natural from where we ended up.

@@ -2,15 +2,13 @@
 
 This section reports a quantitative evaluation of \textbf{RAMSES} relative to existing approaches.
 Every experiment is run five times under the same hardware setup.
-We give the mean $\pm$ standard deviation along with $95\%$ confidence intervals computed under Student's $t$-distribution.
-Regime-boundary experiments use at least three controlled $\alpha$--$\beta$ settings per configuration so that the transition observations are statistically robust.
+Tables report the authors' existing mean $\pm$ standard-deviation summaries over five runs. Raw per-run observations are not in this repository; confidence intervals and significance tests must therefore be recomputed before submission rather than inferred from the summaries.
 
 \noindent\textbf{Testbed.}
-Unless we say otherwise, the platform is an industrial-grade server
-used as a laboratory server (not claimed to represent a deployed factory edge):
+Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
 two NVIDIA A100 (80GB) GPUs, an Intel Xeon Gold 6440 CPU (40 cores),
 512~GB ECC DRAM, and a Gen4 NVMe SSD running PyTorch~2.4, CUDA~12.2,
-and vLLM~0.5.3. Llama-4 experiments use a documented local compatibility adapter rather than claiming native vLLM~0.5.3 support; the adapter and invocation are part of the artifact. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. The machine has
+and vLLM~0.5.3. Because vLLM~0.5.3 does not natively document Llama-4 support, the exact compatibility patch and invocation must be supplied before these comparisons are reproducible. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. The machine has
 redundant power, ECC protection, and sustained-load thermal control,
 which is what 24/7 industrial operation actually looks like.
 Single-GPU ablations are flagged explicitly as ``1$\times$A100''.
@@ -65,11 +63,11 @@ Compared with the competing methods, latency reductions land between 7\% and 12\
 
 \subsubsection{Stability collapse and recovery across regime boundaries}
 
-Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. Time-series plots of P99 latency, swap intensity, and fragmentation under RAMSES are statistically stationary. GPU restarts caused by context conflicts drop by roughly 90\%---a clear sign that regime-aware control is suppressing the cumulative instability that builds up near the boundary.
+Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. The finite run records fewer failures, but the repository does not contain the raw time series or a stationarity-test script; we therefore do not claim statistical stationarity or a causal mechanism from these counts alone.
 
 % =====================================================
 \subsubsection{Long-Duration QoS under a Calibrated Synthetic Trace}
-The 72-hour run uses the statistically calibrated synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  RAMSES records a 0.6\% miss fraction versus 8.7\% for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  P99 latency drift is $\pm3.2\%$ versus 18\% for the reference, with no observed CUDA restart in this finite run.
+The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  RAMSES records a 0.6\% miss fraction versus 8.7\% for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  P99 latency drift is $\pm3.2\%$ versus 18\% for the reference, with no observed CUDA restart in this finite run.
 
 % =====================================================
 \subsection{Multi-GPU Scope}
@@ -79,7 +77,7 @@ The contribution and all primary comparisons are scoped to one serving node.  Tw
 \subsection{Regime invariance across model architectures}
 
 Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down loading time by 50--59\% and inference latency by up to 32\% in every configuration we tried.
-With five runs each, 95\% confidence intervals stay within $\pm$2.3\%. So regime-aware memory orchestration is not specific to one architecture---it generalizes.
+Five runs were reported for each model. Per-run observations are needed to recompute Student-$t$ confidence intervals and to determine whether the effect generalizes beyond these configurations.
 
 % =====================================================
 \begin{figure}[t]
@@ -135,36 +133,24 @@ Within GPU-only NVML accounting, RAMSES lowers per-inference GPU energy under th
 \label{edge-central-eval}
 
 \textbf{Trace Synthesis Methodology.}
-For something closer to production-grade load, we built a 72-hour
-industrial trace whose parameters are taken from control-cycle
-statistics, TSN reservation windows, and event-frequency profiles
-described in IEC~61131-3--compliant automation
-deployments~\cite{chekired2018fogscheduling,wu2021dnninference}.
-Real factory logs are usually proprietary, which makes them unsuited
-for reproducible research; the synthetic trace instead enforces
-(i)~10\,ms scan-cycle periodicity consistent with PLC
-execution semantics~\cite{cao2021edgecps},
-(ii)~burst patterns calibrated to documented anomaly escalation
-rates from IIoT sensor deployments~\cite{deng2020edgerl},
-and (iii)~inspection-task intervals taken from industrial vision
-benchmarks~\cite{lu2021dtfl}.
+We use a 72-hour parameterized synthetic request schedule as a repeatable
+stress input.  It combines a nominal 10~ms arrival cadence, bounded jitter,
+independent burst injection, and a configurable concurrency level.  These
+choices are workload-generator parameters rather than measurements from a PLC,
+TSN schedule, factory log, sensor stream, or industrial-vision benchmark.  The
+schedule is intended to exercise sustained allocation and transfer behavior;
+it is not evidence that the evaluated inference completes within a control
+cycle.
 
-\textbf{Statistical Fidelity Validation.}
-We checked the synthesized trace against three fidelity criteria.
-\emph{Inter-arrival distribution:} a Kolmogorov--Smirnov (KS) test
-between the synthesized and reference inter-arrival samples gave
-$D_{\mathrm{KS}}=0.043$ ($p=0.31$), which means there is no
-statistically significant deviation at the 5\% level.
-\emph{Burst duration fidelity:} the Kullback--Leibler (KL)
-divergence between the synthesized and reference burst-duration
-histograms is $D_{\mathrm{KL}}=0.018$ nats, comfortably under
-the 0.05-nat threshold typically used for workload representativeness.
-\emph{$\beta$-dynamics coverage:} the trace spans
-$\beta \in [0.55,\,1.22]$, which is wide enough to exercise
-all three regimes (coordination-dominated, I/O-limited,
-capacity-limited)---so the regime-boundary transitions are
-actually being tested, not assumed away.
-These checks establish similarity only to the stated reference summaries; they do not establish field representativeness. The generator, seed, and extraction procedure are included in the review artifact.
+\textbf{Reproducibility and fidelity limits.}
+The included generator exposes the nominal 10~ms cadence, jitter model,
+burst probability, concurrency range, and random seed.  It does not include
+factory reference samples or their extraction protocol.  Consequently, this
+revision withdraws the previously reported KS and KL fidelity claims: neither
+can be audited from the available repository, and a synthetic schedule cannot
+establish field representativeness.  The generated load covers a configured
+range of transfer pressure, but operating-point coverage must be recomputed
+from measured counters rather than assumed from arrival parameters.
 
 Under this trace, RAMSES drops p99 latency by 38\%, lowers tail
 jitter by 41\%, and brings SLA violations from 8.7\% down to 0.6\%.

@@ -3,7 +3,7 @@
 \centering
 \includegraphics[width=0.95\linewidth]{figures/rameses_design.png}
 \caption{Industrial hierarchical memory architecture of RAMSES
-within representative factory-floor scenarios.
+for laboratory workloads motivated by industrial analytics.
 The data plane (solid arrows) coordinates GPU VRAM, host DRAM,
 and NVMe for three industrial workloads:
 (1) digital twin state synchronization aligned with PLC scan cycles,
@@ -26,9 +26,7 @@ operation.}
 \end{figure}
 
 \section{RAMSES: Architecture and Key Components}\label{sec:mball}
-\footnotetext[1]{Source code and industrial trace generation
-scripts will be made publicly available at
-\url{https://github.com/leemgs/ramses} upon acceptance.}
+\footnotetext[1]{The anonymized synthetic-trace generator is included with the review artifact. Runtime source and baseline ports require a separate archival release before resubmission.}
 
 LLM inference relies on tight cooperation across a heterogeneous set of resources: GPUs, VRAM, DRAM, NVMe, and Central Processing Units (CPUs). Existing serving stacks and runtimes do not handle resource contention as a first-class concern, which is why we keep seeing the same failure modes: Compute Unified Device Architecture (CUDA) out-of-memory (OOM) errors, context-switch stalls, and memory-mapping overhead. Earlier attempts to plug these gaps include GPU--CPU offloading~\cite{xu2025ellm}, speculative offloading~\cite{zhuge2025specoffload}, and cache-centric management~\cite{jiang2024neo}. Useful as those are, most stop at single-tier transfers (typically VRAM--CPU) or address only narrow scenarios such as key-value (KV) cache management.
 
@@ -40,7 +38,7 @@ The \textbf{GPU Process Allocator} is our answer to this. Rather than waiting fo
 
 In practice, the allocator runs three policies.
 \textbf{Pre-defined execution slot reservation} hands each model a context ID, memory pool, and kernel queue ahead of time, so CUDA initialization no longer happens on the critical path.
-\textbf{Context separation with fixed memory pools} guarantees that models sharing a GPU draw from independent regions; fragmentation and cross-model cache pollution stay bounded.
+\textbf{Context separation with fixed memory pools} assigns models to separate configured regions; the finite experiments show lower fragmentation and cross-model cache interference.
 \textbf{Priority-based scheduling} orders execution between I/O-bound and compute-bound models so neither stalls the other and idle GPU cycles shrink.
 The result is a small extension of process pinning that helps preserve \textbf{Quality of Service (QoS) stability} and gives more \textbf{predictable latency} when several models share one GPU \cite{stojkovic2025dynamollm}. Algorithm~\ref{alg:gpa_en} summarizes the end-to-end pre-reservation and dispatch flow.
 
@@ -165,283 +163,84 @@ The combined effect is that RAMSES can keep \textbf{17B-parameter models} servin
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/phase_diagram.png}
-\caption{Phase diagram illustrating regime transitions in the $(\alpha,\beta)$ space. The vertical dashed line marks $\alpha=\alpha_{\text{critical}}$ (Eq.~\ref{eq:alpha_critical}) and the horizontal dashed line marks the I/O saturation boundary $\beta=1$ (Lemma~2). The lower-right quadrant ($\alpha\!\ge\!\alpha_{\text{critical}},\;\beta\!<\!1$) is the \emph{coordination-dominated} regime characterized by Theorem~1---the deterministic operating region targeted by RAMSES. The lower-left quadrant is \emph{capacity-limited} (Lemma~1), and the entire upper half ($\beta\!\ge\!1$) is \emph{I/O-limited}; in the upper-left quadrant both conditions hold simultaneously.}
+\caption{Schematic operating map for the measured pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds, not feasibility, determinism, or stability guarantees; measured operating points and prediction residuals accompany the artifact.}
 \label{fig:phase_diagram}
 \end{figure}
 
-\subsection{Theoretical Analysis}\label{sec:theory}
+\subsection{Overlap-Aware Operating Model}\label{sec:theory}
 
-The empirical gains in RAMSES are paired with a \textbf{mathematical model of how the resource hierarchy interacts}.
-
-\textbf{Multi-tier Memory Transfer Model.}
-End-to-end latency along the VRAM--DRAM--NVMe path decomposes as
-\begin{IEEEeqnarray}{rCl}\label{eq:latency_total}
-T_{\text{total}}
-&=& T_{\text{comp}}
-  + T_{\text{mem}}(\text{VRAM},\text{DRAM}) \nonumber \\
-&& {}+ T_{\text{swap}}(\text{NVMe})
-  + T_{\text{sync}} ,
-\end{IEEEeqnarray}
-in which $T_{\text{mem}}(\text{VRAM},\text{DRAM})$ rolls together
-the effective intra- and cross-tier access latency for whatever portion
-of the working set is served from the fast tiers (VRAM and DRAM),
-and $T_{\text{sync}}$ collects kernel-launch and host--device
-synchronization overhead.
-
-Let $W$ be the working-set size per inference step.
-Once memory capacity is exceeded, the surplus has to be transferred:
-\begin{equation}\label{eq:delta_swap}
-\Delta_{\text{swap}} =
-\max\!\left(0,\, W - C_{\text{VRAM}} - C_{\text{DRAM}}\right).
-\end{equation}
-
-The swap latency itself is bounded by NVMe bandwidth:
-\begin{equation}\label{eq:tswap}
-T_{\text{swap}} =
-\frac{\Delta_{\text{swap}}}{B_{\text{NVMe}}}.
-\end{equation}
-
-Capacity Ratio and Critical Threshold. Let $W(t)$ stand for the instantaneous working-set size per inference step, and let $C_{\mathrm{agg}} = C_{\mathrm{VRAM}} + C_{\mathrm{DRAM}}$ be the aggregate fast-memory capacity. Capacity-induced swapping kicks in when
-\begin{equation}\label{eq:cap_inequality}
-W(t) > C_{\mathrm{agg}}.
-\end{equation}
-The regime boundary follows from the equality
-\begin{equation}\label{eq:wstar}
-W^{*} = C_{\mathrm{VRAM}} + C_{\mathrm{DRAM}},
-\end{equation}
-where $W^{*}$ is the critical working set that separates feasible in-memory execution from execution that must trigger swap. With the capacity ratio
+We use the following model as an engineering classification tool, not as a
+real-time guarantee.  Let $D(t)$ be the bytes resident or demanded by a step,
+$C_f=C_{\mathrm{VRAM}}+C_{\mathrm{DRAM}}$ the usable fast-tier capacity,
+$V_{\uparrow}(t)$ and $V_{\downarrow}(t)$ the measured read and write transfer
+volumes, $h(t)$ the prefetch-hit fraction, and $q(t)$ the measured storage
+queueing delay.  These quantities are independent observations; in
+particular, occupancy is not treated as bytes transferred.  The capacity
+pressure is
 \begin{equation}\label{eq:alpha_def}
-\alpha = \frac{C_{\mathrm{DRAM}}}{C_{\mathrm{VRAM}}},
+ \alpha(t)=D(t)/C_f,
 \end{equation}
-this rewrites as
-\begin{equation}\label{eq:alpha_critical}
-\alpha_{\mathrm{critical}} = \frac{W^{*}}{C_{\mathrm{VRAM}}} - 1.
-\end{equation}
-Hence $\alpha < \alpha_{\mathrm{critical}}$ forces swap amplification---this is the formal statement of the capacity-limited regime.
-
-For $\alpha < \alpha_{\text{critical}}$,
-\begin{equation}\label{eq:partial_dram}
-\frac{\partial T_{\text{total}}}{\partial C_{\text{DRAM}}} < 0,
-\end{equation}
-which is what we mean by capacity-dominated latency.
-Past the boundary, adding more DRAM brings diminishing returns.
-
-\vspace{0.3ex}
-\textbf{I/O Pressure Ratio and Saturation Boundary.}
-The I/O pressure ratio is
+and the transfer pressure is
 \begin{equation}\label{eq:beta_def}
-\beta =
-\frac{\Delta_{\text{swap}}}
-     {B_{\text{NVMe}} (T_{\text{comp}} + T_{\text{mem}})}.
+ \beta(t)=\frac{L_0+q(t)+V_{\uparrow}(t)/B_{\uparrow}
+ +V_{\downarrow}(t)/B_{\downarrow}}
+ {T_{\mathrm{comp}}(t)+T_{\mathrm{mem}}(t)+T_{\mathrm{sync}}(t)}.
 \end{equation}
+Here $L_0$ is fixed request/setup latency and $B_{\uparrow}$ and
+$B_{\downarrow}$ are effective, direction-specific bandwidths measured with
+the same block size and queue depth as the experiment.  All symbols are
+observables; no critical value is defined by substituting a boundary back into
+itself.
 
-The system tips into the I/O-limited regime once swap delay starts dominating compute progress. Substituting
-\begin{equation}\label{eq:tswap2}
-T_{\mathrm{swap}} = \frac{\Delta_{\mathrm{swap}}}{B_{\mathrm{NVMe}}},
-\end{equation}
-back into the latency decomposition gives the I/O-dominated condition
-\begin{equation}\label{eq:io_dom}
-\frac{\Delta_{\mathrm{swap}}}{B_{\mathrm{NVMe}}} \ge T_{\mathrm{comp}} + T_{\mathrm{mem}}.
-\end{equation}
-After normalization, this turns into the dimensionless I/O pressure ratio
-\begin{equation}\label{eq:beta_norm}
-\beta = \frac{\Delta_{\mathrm{swap}}}{B_{\mathrm{NVMe}}(T_{\mathrm{comp}}+T_{\mathrm{mem}})},
-\end{equation}
-with the regime boundary at $\beta = 1$. When $\beta > 1$, no amount of additional coordination can reduce total latency---bandwidth saturation is the hard ceiling, and that is the theoretical content of the I/O-limited regime.
+Asynchronous transfer overlaps computation.  Accordingly, predicted service
+time is
+\begin{IEEEeqnarray}{rCl}\label{eq:latency_total}
+\widehat T_{\mathrm{total}} &=& T_{\mathrm{{sync}}}+T_{\mathrm{mem}}
+ +\max\{T_{\mathrm{comp}},(1-h)T_{\mathrm{xfer}}\},\\
+T_{\mathrm{xfer}}&=&L_0+q+V_{\uparrow}/B_{\uparrow}+V_{\downarrow}/B_{\downarrow}.
+\end{IEEEeqnarray}
+The max operator prevents double counting overlapped DMA and compute.  Block
+rounding is included in the measured volumes.  We call observations with
+$\alpha>1$ capacity-pressured and observations with $\beta\geq1$ transfer-
+pressured; the remaining points are coordination-sensitive.  These are
+operational labels, not theorems.  They neither imply zero swapping nor a
+worst-case bound.  Fig.~\ref{fig:phase_diagram} is therefore a schematic guide;
+measured points and prediction residuals are reported with the evaluation
+artifact.
 
-So $\beta=1$ is the I/O saturation boundary.
+\subsection{Online Policy and Complexity}\label{sec:controller}
+Every 200~ms the analyzer reads allocated bytes, transfer counters, queue
+depth, effective bandwidth, and exponentially weighted compute, memory, and
+synchronization times.  It computes Eqs.~\eqref{eq:alpha_def}--\eqref{eq:beta_def}
+in constant time.  To avoid oscillation, a state change requires three
+consecutive samples beyond a 5\% hysteresis band.  In the capacity-pressured
+state the policy rejects admissions that exceed the configured memory reserve
+and evicts the lowest predicted-reuse tensors.  In the transfer-pressured state
+it stops speculative eviction, reduces prefetch depth, and prioritizes reads.
+In the coordination-sensitive state it enables asynchronous prefetch and
+NUMA-local placement.  The objective is lexicographic: prevent allocation
+failure, then minimize measured p99 latency, then transfer bytes.
 
-\textbf{Lemma 1 (Capacity Boundary).}\label{lem:cap}
-If $W(t) > C_{\mathrm{VRAM}} + C_{\mathrm{DRAM}}$,
-then $\Delta_{\mathrm{swap}} > 0$ and
-$\alpha < \alpha_{\mathrm{critical}}$,
-so the system is capacity-limited.
-\emph{Proof.}
-Equations \eqref{eq:delta_swap} and \eqref{eq:wstar} together give that $W(t) > W^*$ implies
-$\Delta_{\mathrm{swap}} > 0$, which in turn yields
-$\partial T_{\mathrm{total}}/\partial C_{\mathrm{DRAM}} < 0$.
-Latency is therefore capacity-dominated. $\square$
+The reuse score is an exponentially weighted count of accesses over the last
+32 graph steps; it has no learned parameters or offline training.  Candidate
+maintenance costs $O(\log n)$ per tensor access for a heap of $n$ evictable
+tensors; sampling, regime classification, and a policy decision are $O(1)$,
+and metadata occupies $O(n)$.  A policy-off ablation retains all three data-
+plane modules but fixes prefetch depth and disables state switching, separating
+the controller from its mechanisms.  The reported 1.68~ms is mean controller
+work per serving request and is not compatible with a 2~ms end-to-end claim;
+we therefore make no such claim.
 
-\textbf{Lemma 2 (I/O Boundary).}\label{lem:io}
-If $\beta \ge 1$, then
-$T_{\mathrm{swap}} \ge T_{\mathrm{comp}} + T_{\mathrm{mem}}$,
-which is the I/O-limited regime.
-\emph{Proof.}
-Follows directly from \eqref{eq:tswap2}--\eqref{eq:beta_norm}. $\square$
-
-\textbf{Theorem 1 (Regime Partition).}\label{thm:regime}
-The system is coordination-dominated iff
-$\alpha \ge \alpha_{\mathrm{critical}}$ and $\beta < 1$,
-in which case $\partial^2 T_{\mathrm{total}}/\partial \alpha^2 > 0$.
-\emph{Proof.}
-We argue necessity and sufficiency in turn.
-
-\emph{(Necessity.)}
-Assume the system is coordination-dominated.
-By definition $\Delta_{\mathrm{swap}}=0$, so
-$W(t) \le C_{\mathrm{VRAM}}+C_{\mathrm{DRAM}}$,
-which by~\eqref{eq:wstar}--\eqref{eq:alpha_critical} gives $\alpha \ge \alpha_{\mathrm{critical}}$.
-Also, $\Delta_{\mathrm{swap}}=0$ yields
-$\beta = 0 < 1$ via~\eqref{eq:beta_norm}.
-
-\emph{(Sufficiency.)}
-Now assume $\alpha \ge \alpha_{\mathrm{critical}}$ and $\beta < 1$.
-By~\eqref{eq:alpha_critical}, $\alpha \ge \alpha_{\mathrm{critical}}$ gives
-$C_{\mathrm{DRAM}} \ge W^{*} - C_{\mathrm{VRAM}}$,
-hence $C_{\mathrm{VRAM}}+C_{\mathrm{DRAM}} \ge W^{*}$.
-For every $W(t) \le W^{*}$, then, $\Delta_{\mathrm{swap}}=0$
-and so $T_{\mathrm{swap}}=0$.
-Latency reduces to
-$T_{\mathrm{total}} = T_{\mathrm{comp}}+T_{\mathrm{mem}}+T_{\mathrm{sync}}$,
-which is governed by compute and locality, not I/O---exactly the
-coordination-dominated regime.
-
-\emph{(Convexity.)}
-Inside the regime ($\alpha > \alpha_{\mathrm{critical}}$,
-$\Delta_{\mathrm{swap}}>0$), substituting~\eqref{eq:delta_swap} and~\eqref{eq:tswap}
-into~\eqref{eq:latency_total} produces
-$T_{\mathrm{total}} = T_{\mathrm{comp}}+T_{\mathrm{mem}}
-+ (W-C_{\mathrm{VRAM}}-C_{\mathrm{DRAM}})/B_{\mathrm{NVMe}}
-+ T_{\mathrm{sync}}$.
-With $C_{\mathrm{DRAM}} = \alpha \cdot C_{\mathrm{VRAM}}$,
-$\partial T_{\mathrm{total}}/\partial\alpha =
--C_{\mathrm{VRAM}}/B_{\mathrm{NVMe}} < 0$
-and
-$\partial^2 T_{\mathrm{total}}/\partial\alpha^2 = 0$.
-At the boundary $\alpha=\alpha_{\mathrm{critical}}$
-the swap term vanishes discontinuously, so the effective second
-derivative of the piecewise function is positive (a convex kink),
-which gives $\partial^2 T_{\mathrm{total}}/\partial\alpha^2 > 0$
-at the regime boundary. $\square$
-
-\textbf{Theorem 2 (Long-Term Stability).}\label{thm:longstab}
-Under bounded $\Delta_{\mathrm{swap}}$ and $\beta < 1$,
-some finite $\epsilon$ exists such that
-\[
-\limsup_{t \to \infty}
-\mathrm{Var}(T_{\mathrm{total}}(t)) \le \epsilon.
-\]
-\emph{Proof.}
-From the latency decomposition,
-$T_{\mathrm{total}} =
-T_{\mathrm{comp}} + T_{\mathrm{mem}} +
-T_{\mathrm{swap}} + T_{\mathrm{sync}}$.
-With $\beta<1$, we have
-$T_{\mathrm{swap}} \le \eta
-(T_{\mathrm{comp}}+T_{\mathrm{mem}})$
-for some $\eta\in(0,1)$.
-Workload and hardware capacity being bounded, each term has a finite
-second moment. So $T_{\mathrm{total}}$ is a finite sum of terms with
-bounded second moments, and
-$\sup_t \mathrm{Var}(T_{\mathrm{total}}(t))<\epsilon$
-for some finite $\epsilon$. $\square$
-
-These analytical conditions trace out the phase partition shown in
-Fig.~\ref{fig:phase_diagram}, where the vertical dashed line marks
-$\alpha=\alpha_{\text{critical}}$ and the horizontal dashed line marks
-$\beta=1$. The \emph{lower-right} quadrant
-($\alpha\!\ge\!\alpha_{\text{critical}},\;\beta\!<\!1$) is the
-coordination-dominated regime characterized by Theorem~1---the
-deterministic operating region targeted by RAMSES. The \emph{lower-left}
-quadrant ($\alpha\!<\!\alpha_{\text{critical}},\;\beta\!<\!1$) is
-capacity-limited (Lemma~1), and the entire \emph{upper half}
-($\beta\!\ge\!1$) is I/O-limited (Lemma~2); in the upper-left
-quadrant both the capacity and I/O conditions hold simultaneously. The
-intersection of the two dashed lines, $(\alpha_{\text{critical}},1)$, is
-the deterministic configuration boundary for industrial inference.
-
-Industrial automation needs bounded-delay guarantees, not best-effort
-averages.
-For PLC-driven control loops compliant with IEC~61131-3,
-execution is periodic with scan cycle $T_{\mathrm{scan}}$,
-and inference has to satisfy a worst-case execution-time bound
-\begin{equation}
-T_{\mathrm{infer}} \le T_{\mathrm{budget}} \le T_{\mathrm{scan}} .
-\end{equation}
-Since $T_{\mathrm{infer}} = T_{\mathrm{total}}$
-in our decomposition, and since
-$T_{\mathrm{swap}} \le \eta (T_{\mathrm{comp}}+T_{\mathrm{mem}})$
-for some $\eta\in(0,1)$ when $\beta<1$, we obtain
-\begin{equation}
-T_{\mathrm{total}}
-\le (1+\eta)(T_{\mathrm{comp}}+T_{\mathrm{mem}})
-+ T_{\mathrm{sync}},
-\end{equation}
-an explicit upper bound usable for WCET analysis.
-For typical settings of $T_{\mathrm{scan}}=10$~ms and
-$T_{\mathrm{budget}}=2$~ms, our measured violation rate sits below
-$0.4\%$, which keeps the timing-fault frequency bounded.
-
-Under IEC~61508, systematic timing faults shape Safety Integrity Level (SIL)
-through the residual failure rate $\lambda_{\mathrm{res}}$.
-Holding $\beta<1$ caps swap-induced delay amplification, so
-$\lambda_{\mathrm{res}} \propto \Pr(T_{\mathrm{total}}>T_{\mathrm{budget}})$.
-The regime constraints
-$(\alpha \ge \alpha_{\mathrm{critical}},\,\beta<1)$
-thus map directly onto SIL-oriented timing compliance.
-
-\textbf{IEC~61508 SIL Mapping.}
-Table~\ref{tab:sil_mapping} translates the measured $P_{\mathrm{timing}}$
-under RAMSES into the IEC~61508 SIL demand-mode
-Probability of Failure on Demand (PFD) bands.
-Over the 72-hour stress run, the timing violation rate was
-$P_{\mathrm{timing}} = 0.004$ (i.e., $4\times10^{-3}$),
-which clears the SIL-2 PFD threshold of
-$\leq 10^{-2}$ and is approaching SIL-3.
-Baselines, in contrast, register $0.087$ (8.7\%), which
-falls within the SIL-1 PFD band ($10^{-2}$--$10^{-1}$) and therefore
-satisfies SIL-1 but not SIL-2.
-In short, $\beta < 1$ together with $\alpha \ge \alpha_{\mathrm{critical}}$
-is a necessary condition for SIL-2--compliant AI inference inside
-industrial control loops.
-
-\begin{table}[h]
-\centering
-\renewcommand{\arraystretch}{1.15}
-\caption{IEC~61508 SIL Demand-Mode PFD Thresholds vs.\
-         Measured Timing Violation Rates}
-\label{tab:sil_mapping}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccc}
-\toprule
-\textbf{SIL Level} & \textbf{PFD Range} & \textbf{Baseline} & \textbf{RAMSES} \\
-\midrule
-SIL-1 & $10^{-1}$--$10^{-2}$ & $8.7\times10^{-2}$~\checkmark & --- \\
-SIL-2 & $10^{-2}$--$10^{-3}$ & --- & $4.0\times10^{-3}$~\checkmark \\
-SIL-3 & $10^{-3}$--$10^{-4}$ & --- & (target) \\
-SIL-4 & $< 10^{-4}$           & --- & (future) \\
-\bottomrule
-\end{tabular}
-\vspace{0.5ex}
-{\footnotesize PFD $\equiv P_{\mathrm{timing}}=\Pr(T_{\mathrm{total}}>T_{\mathrm{budget}})$;
-measured over 72-hour continuous operation.
-\checkmark~denotes the highest SIL band each system satisfies.
-\emph{(target)} marks the next band RAMSES is approaching but has not yet certified at, and \emph{(future)} marks an aspirational target beyond the scope of this evaluation.}
-\end{table}
-
-\textbf{Proposition 1 (Control-Loop Stability Bound).}
-Take a discrete-time industrial control loop with
-sampling interval $T_{\mathrm{scan}}$ and inference delay
-$T_{\mathrm{infer}} = T_{\mathrm{total}}$.
-Closed-loop stability degrades once latency variance becomes
-comparable to the sampling interval, i.e.,
-\begin{equation}
-\sigma_{\mathrm{infer}} = \sqrt{\mathrm{Var}(T_{\mathrm{total}})}
-= \mathcal{O}(T_{\mathrm{scan}}).
-\end{equation}
-With $\beta<1$ and bounded $\Delta_{\mathrm{swap}}$,
-Theorem~\ref{thm:longstab} gives
-$\mathrm{Var}(T_{\mathrm{total}}) \le \epsilon$,
-which limits delay-induced phase deviation
-\begin{equation}
-\Delta \phi \approx \omega\, \Delta T_{\mathrm{infer}},
-\end{equation}
-with $\omega$ the loop frequency.
-The regime constraints
-$(\alpha \ge \alpha_{\mathrm{critical}},\, \beta<1)$
-thus bound phase uncertainty and preserve deterministic
-scan-cycle execution under IEC~61131-3.
-
+\subsection{Scope of Timing and Safety Claims}
+The measured latency distributions are QoS observations for non-safety AI
+serving.  They are not WCET bounds, deterministic-latency guarantees, control-
+loop stability proofs, or evidence of IEC~61508 Safety Integrity Level (SIL)
+compliance.  A deadline-miss fraction is not a probability of dangerous
+failure on demand.  Establishing a safety claim would additionally require a
+defined safety function and demand mode, hazard analysis, diagnostic coverage,
+common-cause and safe-state assumptions, a plant-specific delay margin, and
+hardware- or software-in-the-loop validation.  RAMSES must therefore be kept
+outside a safety function unless independently qualified by the integrator.
 
 \subsection{Ablation Analysis}
 The three modules of RAMSES contribute on their own, but they also reinforce each other when combined. To show this, we ran an \textbf{ablation study} over four configurations: full RAMSES, RAMSES without the GPU Process Allocator, without the Task Memory Manager, and without the GPU Booster. Table~\ref{tab:ablation} summarizes the outcome---every ablation degrades performance, and the breakdown matches the design intent of each module. Removing the \textbf{GPU Process Allocator}, in particular, has the largest impact on inference latency (35.0\% $\rightarrow$ 20.5\%, a 14.5~percentage-point drop), consistent with its role of pre-resolving CUDA context conflicts on the critical path. Removing the \textbf{Task Memory Manager} has the largest impact on VRAM reduction (15.0\% $\rightarrow$ 5.0\%, a 10.0~percentage-point drop), consistent with its NUMA-aware allocation and predictive DRAM offloading. Disabling the \textbf{GPU Booster} produces an intermediate degradation across both latency and VRAM, consistent with its swap-aware role between VRAM and NVMe. The pattern lines up cleanly with the design intent: each of the three modules dominates the metric it was built to target~\cite{korthikanti2023reducing}.

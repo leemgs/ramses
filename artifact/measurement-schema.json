@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RAMSES measured request record",
+  "description": "One JSON object per line. Optional fields must contain synchronized instrument readings, never estimates substituted for measurements.",
+  "type": "object",
+  "required": ["run_id", "system", "task", "latency_ms", "input_tokens", "output_tokens", "batch", "concurrency", "request_count", "precision", "model"],
+  "properties": {
+    "run_id":{"type":"string"}, "system":{"type":"string"},
+    "task":{"enum":["scoring","continuation","ttft","generation"]},
+    "latency_ms":{"type":"number","minimum":0}, "input_tokens":{"type":"integer","minimum":0},
+    "output_tokens":{"type":"integer","minimum":0}, "batch":{"type":"integer","minimum":1},
+    "concurrency":{"type":"integer","minimum":1}, "request_count":{"type":"integer","minimum":1},
+    "precision":{"type":"string"}, "model":{"type":"string"},
+    "alpha":{"type":"number"}, "beta":{"type":"number"}, "predicted_ms":{"type":"number"},
+    "read_bw_gbps":{"type":"number"}, "write_bw_gbps":{"type":"number"}, "queue_ms":{"type":"number"},
+    "prefetch_hits":{"type":"integer"}, "prefetch_misses":{"type":"integer"},
+    "bytes_read":{"type":"integer"}, "bytes_written":{"type":"integer"},
+    "node_energy_j":{"type":"number"}, "gpu_energy_j":{"type":"number"},
+    "tokens":{"type":"integer"}, "throughput_tps":{"type":"number"}
+  }, "additionalProperties": true
+}

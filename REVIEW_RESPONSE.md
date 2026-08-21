@@ -97,3 +97,7 @@ This infrastructure changes the status of reporting and instrumentation from “
 ## Added release gates
 
 `BASELINE_MANIFEST.md` prevents baseline results from being treated as reproducible until immutable versions, patches, cache protocol, and tuning budgets are filled. `REFERENCE_AUDIT.md` records the four reviewer-identified metadata cases and prohibits marking them verified without primary-record evidence. These gates intentionally remain incomplete rather than filling unknown values with guesses.
+
+## Free-accelerator follow-up
+
+A GPU-required Google Colab notebook has been added for the four-way latency taxonomy. It uses a public tiny GPT-2 model solely as an artifact portability smoke test, records runtime provenance, performs five runs with 100 requests per task, and exports request-level JSONL. Free Colab allocation requires interactive Google authentication/runtime selection and is not available to this non-interactive execution environment; consequently, no unexecuted notebook values are inserted into the paper. Even after execution, this smoke test must not be presented as RAMSES, industrial, GDS, controller-ablation, or whole-node-energy evidence.

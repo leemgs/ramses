@@ -23,3 +23,9 @@ A publishable run requires CUDA-capable hardware, NUMA/NVMe tools, the RAMSES ru
 ## Implementation provenance
 
 The only discoverable implementation is the separate `leemgs/mball` prototype at commit `f4bd8198a941da81f28b1462885e37185e33773e`. Its source labels GPU allocation as mocked and disk swap as an example/emulation; it is therefore **not** imported or represented as a production RAMSES runtime, GPUDirect Storage implementation, or evidence for the manuscript's quantitative results.
+
+## Free Colab GPU smoke test
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leemgs/ramses_tii_journal_20260519_1020/blob/main/artifact/colab_experiment.ipynb)
+
+Open [`colab_experiment.ipynb`](colab_experiment.ipynb) in Google Colab and explicitly select a GPU runtime. The notebook pins dependencies, records GPU/driver/software provenance, fails if CUDA is unavailable, measures scoring/continuation/TTFT/generation separately, and exports schema-compatible JSONL. Because free accelerator assignment is interactive, capacity-limited, and not guaranteed, it cannot be launched non-interactively from this repository or used as a substitute for the A100/GDS/whole-node-power experiments. Its tiny-GPT-2 values are supplemental artifact smoke tests, not RAMSES effectiveness results.

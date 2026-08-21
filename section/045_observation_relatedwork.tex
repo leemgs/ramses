@@ -20,7 +20,7 @@
 \textbf{Dur.} &
 \textbf{Metric} \\
 \midrule
-FlexGen      & GPU--CPU     & $\times$ & None & Short & $\times$ \\
+FlexGen      & GPU--CPU--disk& $\times$ & None & Short & $\times$ \\
 SwapAdvisor  & GPU--CPU     & $\times$ & None & Short & $\times$ \\
 NEO          & Partial      & $\times$ & None & Short & $\times$ \\
 SpecOffload  & GPU--NVMe    & $\times$ & None & Short & $\times$ \\
@@ -43,14 +43,13 @@ TP/W). ``Part.'' marks partial support; ``Arch.'' marks
 architectural-level analysis only.
 The general picture is that prior LLM-serving frameworks tune for
 throughput or stretch memory via partial GPU--CPU coordination---but
-none of them speak directly to deterministic latency under industrial
-cyber--physical constraints.
+none of them evaluates the same combination of intra-node NUMA placement, resource preallocation, and pressure-driven policy switching.
 
 Several recent TII papers cover complementary parts of the stack
 without touching the intra-node memory dynamics that RAMSES targets.
 \textbf{Tao~\emph{et~al.}~\cite{tao2019digitaltwin}} model latency
 at the digital-twin synchronization layer, but they do not engage
-GPU VRAM--DRAM swap dynamics or deterministic bounded-delay inference.
+GPU VRAM--DRAM swap dynamics or single-node pressure-driven inference.
 \textbf{Cao~\emph{et~al.}~\cite{cao2021edgecps}} survey cloud--edge
 resource coordination and explicitly bracket out the intra-node memory
 hierarchy; RAMSES supplies the missing memory-subsystem layer.
@@ -59,7 +58,7 @@ mobile-edge compute at the task-scheduling level. Inside each node,
 RAMSES is what manages VRAM/DRAM/NVMe once the task has been placed.
 \textbf{Wu~\emph{et~al.}~\cite{wu2021dnninference}} study
 accuracy--latency tradeoffs through model splitting, with each device
-treated as a black box. RAMSES bounds the per-device delay that such
+treated as a black box. RAMSES empirically reduces the per-device delay that such
 split-inference schedulers implicitly assume.
 \textbf{Lu~\emph{et~al.}~\cite{lu2021dtfl}} reduce communication
 overhead in federated learning for digital twins; on each participating
@@ -72,15 +71,13 @@ where RAMSES plugs in by giving a regime-aware way to derive those
 constants from VRAM--NVMe behavior.
 \textbf{Deng~\emph{et~al.}~\cite{deng2020edgerl}} use RL for dynamic
 edge-resource allocation, modeling inference cost at the
-request-dispatch level; RAMSES gives the deterministic per-node
-latency bounds that an RL policy can take as a certified constraint.
+request-dispatch level; RAMSES supplies measured per-node latency distributions that an RL policy could use as observations.
 
 The pattern is consistent: prior TII work coordinates at the network,
 task, or device level and treats inference nodes as opaque units with
 fixed latency. RAMSES sits one layer below all of this, characterizing
 regime-dependent behavior across VRAM--DRAM--NVMe inside a single
-serving node and producing bounded-delay guarantees that upstream
-schedulers can adopt as constraints.
+serving node and producing empirical latency distributions that upstream schedulers can use.
 
 \subsection{Distinct Contributions of RAMSES}
 
@@ -89,13 +86,10 @@ usually appear separately. First, hierarchical memory orchestration.
 Second, an analytical regime characterization built on a latency
 decomposition over compute, locality, transfer, and synchronization.
 Going past conventional serving optimizations, we identify
-deterministic regime conditions ($\alpha_{\text{critical}}$,
-$\beta = 1$) that bound latency variance in industrial CPS.
+observable pressure ratios that classify capacity and transfer stress.
 The three internal modules play distinct roles---the GPU Process
 Allocator handles context conflicts, the Task Memory Manager handles
 NUMA-aware allocation, and the GPU Booster handles swap-aware
 asynchronous control---but each is judged against the same regime
 boundaries. Where systems-venue work tends to optimize for throughput
-or for one specific layer, the focus here is bounded-delay guarantees,
-scan-cycle compatibility, and SLA stability over long-running
-industrial workloads.
+or for one specific layer, the focus here is single-node QoS and sustained-load behavior under a parameterized synthetic workload.

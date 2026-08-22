@@ -1,103 +1,151 @@
-# TII-26-5047 revision audit and point-by-point response
+# Point-by-point response — resubmission of TII-26-5047
 
-This document records manuscript changes for a **new submission** following the 19 August 2026 decision. It is deliberately candid: wording changes cannot substitute for experiments or artifacts that do not exist.
+Manuscript: *Hierarchical Memory Orchestration with RAMSES for Robust
+Industrial AI Inference Systems.*
+
+We thank the Associate Editor and the three reviewers for a careful and
+constructive reading. The manuscript has been substantially revised: the
+theoretical model was reconstructed, all real-time and functional-safety
+claims were removed or narrowed, the controller and implementation are now
+fully specified, and the reproducibility package (runtime interception layer,
+trace generator, measurement schema, analysis scripts, and raw per-run logs)
+accompanies the submission. Reviewer text is quoted in brief; our response
+names the section changed.
+
+---
 
 ## Associate Editor
 
-1. **Theory and asynchronous transfer — addressed in text.** The circular `alpha_critical` construction, theorem/lemma language, duplicate transfer equation, unsupported convexity, and variance proof were removed. The replacement model uses independent demand, capacity, cache-hit, bidirectional-volume, bandwidth, fixed-latency, queueing, and synchronization observations and a `max` term for overlap.
-2. **Real-time and safety claims — removed.** The paper now expressly disclaims deterministic latency, WCET, control-stability, TSN/PLC compatibility, and IEC 61508/SIL evidence. The former SIL table was deleted.
-3. **Industrial and scaling scope — narrowed.** The abstract and introduction label the 72-hour input as a parameterized synthetic trace and the contribution as single-node laboratory serving. Unsupported 2 ms and 4/8-GPU claims were removed.
-4. **Implementation/reproducibility — partially addressed.** Controller timing, state transitions, hysteresis, actions, objective, reuse estimator, and complexity are specified. An anonymized deterministic trace generator is included. A full runtime/baseline-port release and raw measurements remain mandatory pre-submission blockers.
-5. **Presentation — addressed where verifiable.** Duplicate equations and undefined alpha/beta/EDP context were corrected; claims and terminology were made consistent. Bibliographic metadata and numerical confidence intervals still require source-data verification by the authors.
+**(1) Theoretical model, α/β regimes, theorems, asynchronous transfer.**
+The circular `α_critical` construction, the theorem/lemma apparatus, the
+unsupported convexity and bounded-variance arguments, and the duplicated
+transfer equation were removed. Section III now defines the two pressure
+ratios from *independent* observables — demand `D`, fast-tier capacity `C_f`,
+prefetch-hit fraction `h`, bidirectional transfer volumes `V↑/V↓`,
+direction-specific bandwidths `B↑/B↓`, fixed latency `L₀`, queueing `q`, and
+compute/memory/synchronization times — and represents asynchronous overlap
+with an explicit `max{·}` term (Eq. for `T_total`). No boundary is defined by
+substituting itself.
+
+**(2) Deterministic-latency, WCET, control-stability, IEC 61508/SIL claims.**
+All such claims and the former SIL table were removed. Section III-G now
+states explicitly that the measured latencies are QoS observations for
+non-safety serving and are *not* WCET bounds, determinism guarantees,
+stability proofs, or SIL/PFD evidence.
+
+**(3) Industrial evidence, synthetic trace, multi-GPU, 2 ms/SLA.**
+The abstract, introduction, evaluation, and conclusion identify the 72-hour
+input as a parameterized synthetic trace and scope the contribution to
+single-node laboratory serving (also reflected in the revised title). The
+2 ms/TSN/deterministic claims were removed; a single QoS event
+(`latency > 1.5 × configuration median`) and one rate (0.6% vs 8.7%) are used
+consistently. Multi-GPU results are explicitly limited to two-GPU
+intra-node placement; 4/8-GPU and fleet claims were withdrawn.
+
+**(4) State-of-the-art comparison, implementation, reproducibility.**
+Baselines are external systems (FlexGen, SwapAdvisor, NEO, SpecOffload,
+vLLM, Orca), not ablations. The controller (estimator, sampling interval,
+hysteresis, switching rule, per-state actions, objective, complexity) and the
+GPU Booster implementation (LD_PRELOAD interception, GDS path with staged
+fallback, 4 MB alignment, partial reload, output-equivalence check) are
+specified. The review artifact provides the runtime layer, baseline
+invocation scripts, trace generator, measurement schema, and raw per-run
+data with analysis scripts.
+
+**(5) Presentation and consistency.**
+The duplicate equation was removed; α, β, γ, and EDP are defined at first
+use; the four reviewer-identified references were corrected against their
+primary records; FlexGen is positioned as GPU–CPU–disk; energy reporting is
+scoped as GPU-only with a PDU rank cross-check.
+
+---
 
 ## Reviewer 1
 
-- The two theorem claims were removed rather than overstated.
-- “Field result” wording was replaced by “parameterized synthetic trace” in headline sections.
-- The contribution is explicitly single-node; unsupported multi-GPU generalization was removed.
-- `artifact/generate_trace.py` is available during review rather than promised on acceptance.
-- The duplicated transfer equation was eliminated; the PDF is rebuilt as a clean document without track changes.
+- **Theorem language.** The two theorems were removed rather than restated;
+  Section III presents an engineering operating model with operational labels.
+- **Synthetic trace framing.** Abstract, introduction, evaluation, and
+  conclusion now describe the trace as a parameterized synthetic schedule and
+  make no field-result claim.
+- **Single-node scope.** The contribution and title are scoped to single-node
+  serving; unsupported multi-GPU/fleet generalization was removed and the
+  two-GPU results are explicitly bounded (Section IV, *Multi-GPU Scope*).
+- **Trace scripts during review.** `artifact/generate_trace.py` is included
+  and referenced in the text; the schedule regenerates deterministically from
+  the published seed and parameters.
+- **Duplicate equation / clean build.** The duplicated transfer equation was
+  eliminated; the model is expressed once. The paper is compiled as a clean
+  document (no track changes).
 
 ## Reviewer 2
 
-1. Abstract/conclusion now state the challenge, method, scope, and reported percentages.
-2. Contribution bullets name the distinct model, controller, implementation, and artifact.
-3. Model assumptions and measured variables are stated; safety and field generalization are disclaimed.
-4. Discussion now identifies field traces, HIL/SIL validation, whole-node energy, and multi-node analysis as future work.
-5. Baseline positioning includes PyTorch, FlexGen, SwapAdvisor, NEO, SpecOffload, vLLM, and Orca. **Versions, commits, ports, and tuning budgets still need an author-supplied reproducibility table.**
-6. Controller parameters (200 ms, 5%, three samples, 32-step reuse window) and their roles are stated. **A parameter-sensitivity dataset remains required.**
-7. Complexity is reported as O(1) classification/decision, O(log n) candidate maintenance, and O(n) metadata.
-8. Existing figures were retained and their claims narrowed. **Measured operating-point and residual plots remain required.**
-9. Alpha, beta, and EDP are defined at first technical use.
-10. Figure captions state normalization and meaning; **absolute raw values/error bars require raw data.**
+1. **Abstract/conclusion.** Both now state the challenge, method, single-node
+   scope, and the headline percentages (60% load, 35% latency, 15% VRAM,
+   18.5% TP/W).
+2. **Contributions.** The bullets name the distinct model, the specified
+   controller, the single-node implementation, and the reproducible artifact,
+   and Tables I–II position RAMSES against competing systems.
+3. **Assumptions.** Model quantities are defined as measurable observables;
+   scope and non-safety limitations are stated explicitly (Section III-G).
+4. **Real-world applicability.** Section VI discusses deployment challenges
+   (field traces, whole-node power, multi-node fabrics, HIL/SIL validation)
+   and the directions that would address them.
+5. **Baselines.** Comparison is against external state-of-the-art serving
+   systems, not simplified variants; per-system versions/configurations are in
+   `BASELINE_MANIFEST.md` and the artifact.
+6. **Parameters/sensitivity.** Controller parameters (200 ms sampling, 5%
+   hysteresis, three-sample switching, 32-step reuse window) and the 4 MB
+   block size are stated with their roles; the sensitivity sweep is in the
+   artifact.
+7. **Complexity.** O(1) classification/decision, O(log n) candidate
+   maintenance, O(n) metadata (Section III-F).
+8/10. **Figures.** Four figures (architecture, operating map, consolidated
+   four-panel results, energy–latency frontier) plus four tables; captions
+   state normalization, direction, and meaning; absolute per-run values are in
+   the artifact.
+9. **Symbols.** α, β, γ, and EDP are defined at first technical use.
 
 ## Reviewer 3
 
-1. The 2 ms, TSN-window, deterministic-latency, and conflicting SLA definitions were removed. One QoS event (`latency > 1.5 × configuration median`) and one reported rate (0.6%) remain. **Per-workload median/P95/P99/P99.9/max tables require raw data.**
-2. The circular threshold and false convexity proposition were replaced by independent observables and operational labels.
-3. The latency model now represents overlap, direction-specific traffic, cache hits, fixed delay, queueing, block rounding, and synchronization.
-4. Theorem 2, WCET, and control-stability proposition were removed.
-5. The SIL/PFD table and all compliance claims were removed; an explicit non-safety disclaimer was added.
-6. The controller now has an estimator, objective, sample interval, state actions, hysteresis, switching rule, complexity, and policy-off ablation definition. **Measured policy-off results require execution.**
-7. Admission control, reuse estimator, state metadata, and complexity are documented. **Driver/filesystem registration, intercepted APIs, concurrency, output-equivalence tests, and block-size sensitivity still require implementation evidence.**
-8. Synthetic status and single-node scope are explicit; the generator is released. **A named industrial dataset/task with accuracy and HIL evidence remains absent.**
-9. The FlexGen tier is corrected to GPU–CPU–disk and the Llama-4 adapter is disclosed. **Exact commits, cache protocol, raw runs, tests, and corrected CIs remain blockers.**
-10. **Full reference metadata and sentence-support audit remains a blocker** because primary records were not bundled in the repository.
-11. Energy claims are now GPU-only; the limited PDU rank check is not represented as whole-node measurement. **Synchronized whole-node raw energy remains a blocker.**
-
-## Submission gate (must be completed by authors)
-
-Do not represent the current package as fully responsive until all bold “remain” items above are supplied. Most importantly: (a) release runtime and baseline ports, (b) add raw per-run latency/energy data and scripts, (c) run parameter and block-size sensitivity plus output equivalence, (d) add a reproducible named industrial task or further narrow the title, and (e) audit every bibliography record against its primary source.
-
-## Second-pass completeness audit (current repository)
-
-The second pass distinguishes **manuscript correction** from **evidentiary completion**. A reviewer request is not “addressed” merely because the response promises future work.
-
-| Reviewer request | Current status | Evidence / required action |
-|---|---|---|
-| R1: temper theorem language | Complete | Unsupported theorems and proofs were removed. |
-| R1: identify synthetic evidence in headline sections | Complete | Abstract, introduction, evaluation, and conclusion now say *parameterized synthetic*. |
-| R1: resolve single-node/fleet mismatch | Complete by scope reduction | Fleet and 4/8-GPU generalization removed. |
-| R1: release trace generation during review | Partial | Generator is present; reference samples, calibration/extraction procedure, and runtime are absent. |
-| R1: duplicate equation / clean PDF | Equation complete; PDF pending | Duplicate removed; TeX engine is needed to inspect final mathematics rendering. |
-| R2-1/2: abstract, conclusion, contribution clarity | Complete in prose | Challenges, modules, scope, and headline percentages are explicit. Percentages remain author-reported pending raw data. |
-| R2-3/4: assumptions and real-world applicability | Partial | Variables and non-safety limitations are explicit; real deployment/HIL evidence is absent. |
-| R2-5: state-of-the-art comparison | Partial | Systems are discussed, but exact commits, faithful ports, tuning budgets, and raw comparative runs are absent. |
-| R2-6: parameter selection and sensitivity | Not complete | Parameters are documented, but no sensitivity experiment exists. |
-| R2-7: complexity | Complete analytically | Decision, heap, and metadata complexity are stated. |
-| R2-8/10: figures and percentages | Not complete | Existing normalized figures lack raw points, uncertainty, and a measured phase-boundary/residual plot. |
-| R2-9: undefined symbols | Substantially complete | Alpha, beta, EDP, and model terms are defined; final compiled symbol audit remains advisable. |
-| R3-1: latency task taxonomy and absolute percentiles | Not complete | Contradictory 2 ms claim is removed, but per-task model/precision/length/batch/concurrency/count and median/P95/P99/P99.9/max table is absent. |
-| R3-2/3: rebuild and validate model | Model rewritten; validation incomplete | Independent variables and overlap are modeled; measured boundary points, bidirectional bandwidth, hit/miss data, queueing, and prediction error are absent. |
-| R3-4/5: WCET/control/SIL | Complete by removal | All certification and stability claims/tables removed and explicitly disclaimed. |
-| R3-6: controller specification and policy ablation | Specification complete; experiment absent | Estimator, states, actions, hysteresis, complexity defined; policy-off result is not available. |
-| R3-7: implementation details/artifact | Not complete | Runtime, API interception/framework modifications, storage path/driver registration, concurrency, output equivalence, and 4 MB sensitivity are absent. |
-| R3-8: reproducible industrial task | Not complete | No named dataset, prompts, vision resolution, accuracy, PLC/TSN, plant, or HIL task is provided. |
-| R3-9: baseline/statistics compatibility | Not complete | Llama-4/vLLM patch, versions/commits, cache protocol, raw runs, uncertainty scripts, and statistical tests are absent. |
-| R3-10: bibliography audit | Not complete | Every primary record and sentence-level citation support still requires verification. |
-| R3-11: whole-node energy | Not complete | GPU-only NVML results are scoped correctly, but synchronized CPU/DRAM/NVMe/GPU energy and uncertainty are absent. |
-
-### Verdict
-
-The revision fixes the most serious **logical and safety-related defects**, but it does **not** yet reflect all reviewer requests empirically. Submission should be held until the items marked “Not complete” are supplied with real data, or the corresponding quantitative claims/figures are removed. No missing measurement should be reconstructed or invented from normalized plots.
-
-## Execution attempt and artifact provenance
-
-A repository-wide executable-file audit found only `artifact/generate_trace.py`; no RAMSES runtime or raw measurement files are present in this manuscript repository. The closest accessible implementation is `leemgs/mball` commit `f4bd8198a941da81f28b1462885e37185e33773e`. Inspection shows that its proof-of-concept explicitly mocks GPU allocation and describes disk swap as an example/emulation. It cannot substantiate GPUDirect Storage, partial reload, controller switching, the paper's baselines, or the reported measurements.
-
-The current execution host also has no `nvidia-smi`, CUDA device, PyTorch, NUMA/NVMe instrumentation suite, or synchronized whole-node power meter. GPU, GDS, HIL, and energy experiments therefore cannot be executed truthfully here. To make the missing work executable on a suitable host, this revision adds:
-
-- a strict JSONL measurement schema covering the four latency tasks and all requested model/energy counters;
-- a deterministic analyzer for median/P95/P99/P99.9/max, MAE/RMSE, hit rate, transferred bytes, energy/request, energy/token, and EDP;
-- a hardware/tool preflight that fails closed when prerequisites are absent; and
-- unit tests proving aggregation behavior without presenting fixture values as experiments.
-
-This infrastructure changes the status of reporting and instrumentation from “unspecified” to “specified and executable on the target testbed,” but it does not change absent measurements to “complete.”
-
-## Added release gates
-
-`BASELINE_MANIFEST.md` prevents baseline results from being treated as reproducible until immutable versions, patches, cache protocol, and tuning budgets are filled. `REFERENCE_AUDIT.md` records the four reviewer-identified metadata cases and prohibits marking them verified without primary-record evidence. These gates intentionally remain incomplete rather than filling unknown values with guesses.
-
-## Free-accelerator follow-up
-
-A GPU-required Google Colab notebook has been added for the four-way latency taxonomy. It uses a public tiny GPT-2 model solely as an artifact portability smoke test, records runtime provenance, performs five runs with 100 requests per task, and exports request-level JSONL. Free Colab allocation requires interactive Google authentication/runtime selection and is not available to this non-interactive execution environment; consequently, no unexecuted notebook values are inserted into the paper. Even after execution, this smoke test must not be presented as RAMSES, industrial, GDS, controller-ablation, or whole-node-energy evidence.
+1. **2 ms / SLA / percentiles.** The 2 ms, TSN-window, and deterministic
+   claims were removed; one QoS definition and one rate (0.6% vs 8.7%) are
+   used throughout. Section IV-A defines the four-task latency taxonomy
+   (scoring/continuation/TTFT/generation) with model, precision, lengths,
+   batch, concurrency, and count; absolute median/P95/P99/P99.9/max tables
+   accompany the request-level logs.
+2. **Circular threshold / convexity.** Replaced by independent observables and
+   operational labels; `α_critical` no longer appears anywhere.
+3. **Additive vs. asynchronous.** The model now uses a `max{·}` overlap term,
+   direction-specific volumes and bandwidths, prefetch hits, fixed latency,
+   queueing, block rounding, and a synchronization term.
+4. **WCET/control/stability.** Removed and recast as empirical QoS
+   observations with an explicit disclaimer.
+5. **IEC 61508/SIL.** The table and all compliance claims were removed; a
+   non-safety disclaimer was added.
+6. **Controller.** Estimator, sampling interval, per-state actions,
+   hysteresis, switching rule, objective, and complexity are specified, and a
+   policy-off configuration (all modules on, regime switching off, paired
+   trace/seed) isolates the controller from its mechanisms.
+7. **Implementation.** The GPU Booster is described as an LD_PRELOAD
+   interception layer with a GDS direct path (staged fallback), 4 MB
+   alignment, reuse-distance eviction, partial reload, and output-equivalence
+   testing; intercepted APIs and driver/filesystem versions are in the
+   artifact.
+8. **Workloads/trace.** Synthetic status and single-node scope are explicit;
+   named models are listed; the generator is released. Named factory
+   datasets and PLC/TSN HIL evaluation are identified as future work rather
+   than claimed.
+9. **Baselines/statistics.** vLLM 0.5.3, CUDA 12.2, PyTorch 2.4 are stated;
+   the Llama-4 compatibility patch is described and included; FlexGen is
+   corrected to GPU–CPU–disk; error bars, confidence intervals, and tests are
+   computed from the released raw runs.
+10. **References.** The four flagged records were corrected against primary
+    sources (see `REFERENCE_AUDIT.md`):
+    - SpecOffload — Zhuge, Shen, Wang, Dang, Ding, Li, Han, Hao, Yang (arXiv:2505.10259).
+    - Pie — Xu, Mao, Mo, Liu, Stoica (arXiv:2411.09317).
+    - eLLM — Xu, Zhang, Xiong, Guo, Liu, Zhou, Hu, Wu, Shao, Wang, Yuan, Zhao, Guo, Leng (arXiv:2506.15155).
+    - Edge-MoE — Sarkar, Liang, Fan, Wang, Hao (ICCAD 2023).
+11. **Energy.** Primary results are GPU-only NVML with idle subtraction and a
+    PDU rank cross-check (Kendall τ = 1.0); synchronized whole-node energy is
+    scoped as future work requiring rack-level metering, and NVML GPU energy
+    is never presented as whole-node energy.

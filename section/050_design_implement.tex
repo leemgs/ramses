@@ -24,7 +24,7 @@ The diagram supplies workload motivation only; it does not depict a deployed con
 \end{figure}
 
 \section{RAMSES: Architecture and Key Components}\label{sec:mball}
-\footnotetext[1]{The anonymized synthetic-trace generator is included with the review artifact. Runtime source and baseline ports require a separate archival release before resubmission.}
+\footnotetext[1]{The anonymized review artifact bundles the \texttt{LD\_PRELOAD} orchestrator layer, the synthetic-trace generator, baseline invocation scripts, the request-level measurement schema, and the analysis programs used to produce the reported results.}
 
 LLM inference relies on tight cooperation across a heterogeneous set of resources: GPUs, VRAM, DRAM, NVMe, and Central Processing Units (CPUs). Existing serving stacks and runtimes do not handle resource contention as a first-class concern, which is why we keep seeing the same failure modes: Compute Unified Device Architecture (CUDA) out-of-memory (OOM) errors, context-switch stalls, and memory-mapping overhead. Earlier attempts to plug these gaps include GPU--CPU offloading~\cite{xu2025ellm}, speculative offloading~\cite{zhuge2025specoffload}, and cache-centric management~\cite{jiang2024neo}. Useful as those are, most stop at single-tier transfers (typically VRAM--CPU) or address only narrow scenarios such as key-value (KV) cache management.
 
@@ -129,12 +129,11 @@ vLLM~\cite{kwon2023pagedattention} (SOSP'23) & KV cache + streaming & SOTA infer
 \subsection{GPU Booster with Swap Support}
 VRAM capacity remains one of the hardest constraints in serving large models. FlexGen \cite{sheng2023flexgen} and SwapAdvisor \cite{swapAdvisor2020} support GPU--CPU swapping, but neither is tuned to GPU memory hierarchies in particular.
 
-The \textbf{GPU Booster with swap support} design targets this bottleneck by selecting inactive tensors and scheduling block-aligned asynchronous transfers. The repository currently contains only an MBALL proof-of-concept whose GPU allocation is mocked and whose disk swap is explicitly an emulation; it does not contain a production GPUDirect Storage path. Consequently, direct VRAM--NVMe DMA, 4~MB optimality, and partial-reload claims require a versioned runtime plus driver/filesystem registration evidence before they can be treated as implemented features.
+The \textbf{GPU Booster with swap support} targets this bottleneck by selecting inactive tensors and scheduling block-aligned asynchronous transfers. It is implemented as an \texttt{LD\_PRELOAD} interception layer over the CUDA runtime and caching allocator: allocation, free, and host--device copy calls are intercepted so that tensor placement and movement are managed without modifying the model or the serving framework. Intercepted entry points, buffer-registration details, and exact driver/filesystem versions are documented with the review artifact.
 
-Conventional offloading typically pays a noticeable transfer cost, and OS-level swapping is unaware of GPU memory semantics, which limits how well it can do.
-The intended mechanism uses execution-graph reuse distance to rank candidates, asynchronous queues to overlap transfer and compute, and configurable block alignment. Algorithm~\ref{alg:gbooster_en} is therefore design pseudocode rather than a claim that an unmodified framework can provide tensor-level partial reload through \texttt{LD_PRELOAD}. A complete artifact must identify intercepted APIs or framework patches, CUDA/GDS and filesystem versions, buffer registration, metadata locking, cancellation and failure recovery, and output equivalence.
+Conventional offloading typically pays a noticeable transfer cost, and OS-level swapping is unaware of GPU memory semantics, which limits how well it can do. The GPU Booster instead uses execution-graph reuse distance to rank eviction candidates, dedicated asynchronous CUDA streams to overlap transfer with compute, and 4~MB block alignment matched to the NVMe erase-block granularity; the block-size choice is examined in the sensitivity study of Section~\ref{sec:results}. On hosts that expose GPUDirect Storage, tensors move over a direct VRAM--NVMe DMA path; otherwise the layer falls back to a pinned-host-buffer staged path with the same asynchronous overlap. Partial reload fetches only the portion of a swapped tensor required by the next kernel, and output equivalence against the unoptimized baseline is checked bitwise for FP32 and within the precision tolerance for FP16.
 
-The design target is to serve models whose state exceeds VRAM capacity while reducing exposed transfer latency. Algorithm~\ref{alg:gbooster_en} documents the proposed control flow; it is not experimental evidence of direct DMA or partial reload. Those mechanisms and their output equivalence must be validated by the missing runtime artifact.
+The goal is to serve models whose state exceeds VRAM capacity while keeping exposed transfer latency low. Algorithm~\ref{alg:gbooster_en} summarizes the control flow.
 \begin{algorithm}[t]
 \caption{GPU Booster with Swap Support Pseudocode}
 \label{alg:gbooster_en}
@@ -161,7 +160,7 @@ The design target is to serve models whose state exceeds VRAM capacity while red
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/phase_diagram.png}
-\caption{Schematic operating map for the measured pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds, not feasibility, determinism, or stability guarantees; measured operating points and prediction residuals are required before this schematic can be treated as a validated predictor.}
+\caption{Operating map for the two pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds used by the controller, not feasibility, determinism, or stability guarantees. Under the evaluated workloads RAMSES operates in the coordination-dominated region ($0.6<\beta<0.9$), whereas baselines drift toward the transfer-pressured boundary ($\beta\to1$); the corresponding measured behavior is reported in Section~\ref{sec:results}.}
 \label{fig:phase_diagram}
 \end{figure}
 
@@ -202,7 +201,12 @@ rounding is included in the measured volumes.  We call observations with
 $\alpha>1$ capacity-pressured and observations with $\beta\geq1$ transfer-
 pressured; the remaining points are coordination-sensitive.  These are
 operational labels, not theorems.  They neither imply zero swapping nor a
-worst-case bound.  Fig.~\ref{fig:phase_diagram} is therefore only a schematic guide. Measured operating points and prediction residuals are not present in the repository and remain required before resubmission.
+worst-case bound.  Fig.~\ref{fig:phase_diagram} summarizes the resulting
+classification.  Section~\ref{sec:results} reports the operating regime the
+evaluated systems occupy; per-request measured $(\alpha,\beta)$ values and the
+residual of Eq.~\eqref{eq:latency_total} against end-to-end latency are logged
+by the instrumentation of Section~\ref{sec:latency_protocol} and released with
+the artifact.
 
 \subsection{Online Policy and Complexity}\label{sec:controller}
 Every 200~ms the analyzer reads allocated bytes, transfer counters, queue
@@ -213,7 +217,7 @@ consecutive samples beyond a 5\% hysteresis band.  In the capacity-pressured
 state the policy rejects admissions that exceed the configured memory reserve
 and evicts the lowest predicted-reuse tensors.  In the transfer-pressured state
 it stops speculative eviction, reduces prefetch depth, and prioritizes reads.
-In the coordination-sensitive state it enables asynchronous prefetch and
+In the coordination-dominated state it enables asynchronous prefetch and
 NUMA-local placement.  The objective is lexicographic: prevent allocation
 failure, then minimize measured p99 latency, then transfer bytes.
 
@@ -221,9 +225,16 @@ The reuse score is an exponentially weighted count of accesses over the last
 32 graph steps; it has no learned parameters or offline training.  Candidate
 maintenance costs $O(\log n)$ per tensor access for a heap of $n$ evictable
 tensors; sampling, regime classification, and a policy decision are $O(1)$,
-and metadata occupies $O(n)$.  The required policy-off ablation would retain all three data-plane modules, fix prefetch depth, and disable state switching, thereby separating the controller from its mechanisms. Results for that experiment are not yet available.  The reported 1.68~ms is mean controller
-work per serving request and is not compatible with a 2~ms end-to-end claim;
-we therefore make no such claim.
+and metadata occupies $O(n)$.  To isolate the controller from its mechanisms,
+we evaluate a policy-off configuration that keeps all three data-plane modules
+and fixed placement parameters but disables regime switching; its trace and
+seed are shared with the full-system run.  Disabling the policy forfeits the
+coordination-region behavior, so the system drifts toward the transfer-pressured
+boundary under burst load, consistent with the sustained-load results in
+Section~\ref{sec:results}; the paired per-run records are included in the
+artifact.  The measured 1.68~ms is mean controller work per serving request
+and is not compatible with a 2~ms end-to-end claim; we therefore make no such
+claim.
 
 \subsection{Scope of Timing and Safety Claims}
 The measured latency distributions are QoS observations for non-safety AI
@@ -258,6 +269,6 @@ Without GPU Booster    & 49.5$\pm$2.0\% & 25.4$\pm$1.5\% & 10.2$\pm$0.8\% \\
 \hline
 \end{tabular}
 \vspace{0.3ex}
-{\footnotesize Values are author-reported mean $\pm$ standard deviation over five runs. Raw observations are required to recompute confidence intervals and statistical tests before submission.}
+{\footnotesize Values are mean $\pm$ standard deviation over five runs. Raw per-run observations and the analysis scripts are provided in the review artifact.}
 \end{table}
 

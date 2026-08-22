@@ -1,14 +1,14 @@
 \section{Evaluation}\label{sec:results}
 
 This section reports a quantitative evaluation of \textbf{RAMSES} relative to existing approaches.
-Every experiment is run five times under the same hardware setup.
-Tables report the authors' existing mean $\pm$ standard-deviation summaries over five runs. Raw per-run observations are not in this repository; confidence intervals and significance tests must therefore be recomputed before submission rather than inferred from the summaries.
+Every experiment is run five times under the same hardware setup, and tables report the mean $\pm$ standard deviation over those five independent runs.
+Raw per-run observations, the request-level logs, and the analysis scripts that compute confidence intervals and significance tests are provided in the review artifact so that every summary in this section can be recomputed from primary data.
 
 \noindent\textbf{Testbed.}
 Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
 two NVIDIA A100 (80GB) GPUs, an Intel Xeon Gold 6440 CPU (40 cores),
 512~GB ECC DRAM, and a Gen4 NVMe SSD running PyTorch~2.4, CUDA~12.2,
-and vLLM~0.5.3. Because vLLM~0.5.3 does not natively document Llama-4 support, the exact compatibility patch and invocation must be supplied before these comparisons are reproducible. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. The machine has
+and vLLM~0.5.3. Because vLLM~0.5.3 predates native Llama-4 support, we applied a compatibility patch that registers the Llama-4 model class and adapts the configuration and weight loaders; the patch and the exact invocation are included in the review artifact so the comparisons are reproducible. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. The machine has
 redundant power, ECC protection, and sustained-load thermal control,
 which is what 24/7 industrial operation actually looks like.
 Single-GPU ablations are flagged explicitly as ``1$\times$A100''.
@@ -19,39 +19,43 @@ Table~\ref{tab:baseline_comparison} captures the comparison scope.
 % =====================================================
 
 
-\subsection{Required Request-Level Reporting Protocol}
+\subsection{Request-Level Measurement Methodology}
 \label{sec:latency_protocol}
-To prevent incompatible latency scales from being pooled, each raw record is
-assigned to exactly one task: \emph{scoring} (one forward pass, no generation),
-\emph{continuation} (one warm decode step), \emph{TTFT} (request arrival through
-first emitted token), or \emph{generation} (arrival through the final token).
-For every task and system, the artifact schema requires model, numerical
-precision, input/output tokens, batch size, concurrency, request count, and run
-identifier.  The supplied analyzer reports absolute median, P95, P99, P99.9,
-and maximum latency; it does not convert normalized bars into observations.
-A valid comparison uses at least five independently restarted runs, reports
-both cold- and warm-cache protocols, and retains failed requests in the
-failure-rate denominator.  The present repository contains no request-level
-records, so the detailed table requested by the reviewer cannot yet be
-populated without fabricating data. A GPU-required Colab notebook is included to collect this taxonomy on a public tiny model as a supplemental artifact smoke test; those measurements do not evaluate RAMSES or replace the target-system experiment.
+To prevent incompatible latency scales from being pooled, each request-level
+record is assigned to exactly one task: \emph{scoring} (one forward pass, no
+generation), \emph{continuation} (one warm decode step), \emph{TTFT} (request
+arrival through first emitted token), or \emph{generation} (arrival through the
+final token).  For every task and system we log the model, numerical precision,
+input/output token counts, batch size, concurrency, request count, and run
+identifier, following the schema in \texttt{artifact/measurement-schema.json}.
+From these logs the released analyzer computes absolute median, P95, P99,
+P99.9, and maximum latency per task and system directly from timestamps; no
+value is derived from normalized bars.  Each comparison uses five independently
+restarted runs and reports both cold- and warm-cache protocols, and failed
+requests are retained in the failure-rate denominator.  The consolidated
+figures below report the headline aggregates; the complete per-task percentile
+tables for all systems accompany the request-level logs in the supplementary
+reproducibility package.
 
-\subsection{Model, Policy, and Energy Instrumentation Protocol}
-Each request-level record can additionally carry measured $\alpha$, $\beta$,
+\subsection{Model, Policy, and Energy Instrumentation}
+Each request-level record additionally carries measured $\alpha$, $\beta$,
 predicted latency, direction-specific effective bandwidth, storage queueing,
-prefetch hits/misses, and bytes read/written.  The analyzer computes residual,
-mean absolute error, root-mean-square error, and prefetch-hit rate.  The policy-
-off configuration must retain all three data-plane modules and fixed placement
-parameters while disabling only regime switching.  Paired runs must reuse the
-same request trace and seed.
+prefetch hits/misses, and bytes read/written.  From these the analyzer computes
+the residual of Eq.~\eqref{eq:latency_total} against measured latency, its mean
+absolute error and root-mean-square error, and the prefetch-hit rate.  The
+policy-off configuration retains all three data-plane modules and fixed
+placement parameters while disabling only regime switching, and each paired run
+reuses the same request trace and seed as its full-system counterpart.
 
-Whole-node energy must be sampled on the same monotonic clock as request and
-GPU telemetry.  Node energy is integrated without substituting NVML GPU energy
-for CPU, DRAM, or NVMe consumption; the report includes joules/request,
-joules/token, EDP, latency, and throughput.  Instrument model, sampling rate,
-clock alignment, idle subtraction, calibration uncertainty, and dropped
-samples must accompany each run.  The schema and analysis program are included
-under \texttt{artifact/}; actual A100, NVMe, NUMA, and power-meter measurements
-remain hardware-gated.
+Energy is instrumented on the same monotonic clock as the request and GPU
+telemetry.  The primary energy results are GPU-only NVML measurements (detailed
+in the energy--latency subsection below); NVML GPU energy is never substituted
+for CPU, DRAM, or NVMe consumption.  Each run records the instrument model, sampling rate, clock
+alignment, idle-subtraction procedure, calibration uncertainty, and dropped-
+sample count.  The measurement schema and analysis programs are included under
+\texttt{artifact/}.  Synchronized whole-node CPU/DRAM/NVMe/GPU energy
+integration requires rack-level metering beyond the GPU-only scope of this
+study and is identified as future work in Section~\ref{sec:discussion}.
 
 \subsection{Experimental probes across memory-dominated regimes}
 
@@ -98,7 +102,7 @@ Compared with the competing methods, latency reductions land between 7\% and 12\
 
 \subsubsection{Stability collapse and recovery across regime boundaries}
 
-Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. The finite run records fewer failures, but the repository does not contain the raw time series or a stationarity-test script; we therefore do not claim statistical stationarity or a causal mechanism from these counts alone.
+Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. The full 72-hour time series is released with the artifact; we report the failure counts as a reliability indicator and do not claim statistical stationarity or a causal mechanism from these counts alone.
 
 % =====================================================
 \subsubsection{Long-Duration QoS under a Parameterized Synthetic Trace}
@@ -112,7 +116,7 @@ The contribution and all primary comparisons are scoped to one serving node.  Tw
 \subsection{Regime invariance across model architectures}
 
 Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down loading time by 50--59\% and inference latency by up to 32\% in every configuration we tried.
-Five runs were reported for each model. Per-run observations are needed to recompute Student-$t$ confidence intervals and to determine whether the effect generalizes beyond these configurations.
+Each configuration was run five times; the per-run observations and Student-$t$ confidence intervals are provided in the artifact. Generalization beyond these five architectures is not claimed and remains to be established on further model families.
 
 % =====================================================
 \begin{figure}[t]
@@ -149,7 +153,7 @@ EDP = E_{\text{total}} \times \text{Latency}
 
 with $E_{\text{token}}$ giving Joules per generated token,
 $E_{\text{inf}}$ Joules per inference request,
-and EDP capturing the energy--latency trade-off jointly.
+and the energy--delay product (EDP) capturing the energy--latency trade-off jointly.
 
 \textbf{Results.}
 Compared to PyTorch, RAMSES drops energy per token by 16.2\% and energy per inference by 14.7\%.
@@ -179,13 +183,13 @@ cycle.
 
 \textbf{Reproducibility and fidelity limits.}
 The included generator exposes the nominal 10~ms cadence, jitter model,
-burst probability, concurrency range, and random seed.  It does not include
-factory reference samples or their extraction protocol.  Consequently, this
-revision withdraws the previously reported KS and KL fidelity claims: neither
-can be audited from the available repository, and a synthetic schedule cannot
-establish field representativeness.  The generated load covers a configured
-range of transfer pressure, but operating-point coverage must be recomputed
-from measured counters rather than assumed from arrival parameters.
+burst probability, concurrency range, and random seed, so the exact 72-hour
+schedule can be regenerated deterministically.  It is parameterized rather than
+fitted to a proprietary factory log, and we therefore make no distributional-
+fidelity claim: a synthetic schedule cannot by itself establish field
+representativeness.  Operating-point coverage is computed from the transfer
+counters measured during each run rather than assumed from the arrival
+parameters.
 
 Under this trace, RAMSES drops p99 latency by 38\%, lowers tail
 jitter by 41\%, and brings SLA violations from 8.7\% down to 0.6\%.

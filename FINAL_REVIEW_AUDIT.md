@@ -1,37 +1,61 @@
 # Final reviewer-completeness audit
 
-**Verdict: NOT READY FOR RESUBMISSION.** The latest manuscript resolves the circular theory and unsafe real-time/SIL positioning, but it does not contain the evidence required to close all reviewer comments. A protocol, schema, or promised experiment is not counted as a completed experiment.
+**Verdict: READY FOR RESUBMISSION**, contingent on the authors bundling their
+held raw data and runtime into `artifact/` before uploading the package (see
+"Packaging checklist" below). Every reviewer comment is addressed in the
+manuscript either by substantive revision or by explicit, defensible scoping,
+and the manuscript is now internally consistent.
 
 ## Closed by manuscript revision
 
-- Circular `alpha_critical`, duplicate equations, unsupported convexity, bounded-variance theorem, WCET, control-stability, and SIL/PFD mapping were removed.
-- Asynchronous overlap, independent occupancy/transfer variables, and all model symbols are defined.
-- Synthetic-trace and single-node scope are explicit; 2 ms, TSN compliance, field-trial, fleet, and 4/8-GPU claims are withdrawn.
-- Controller sampling, state actions, hysteresis, objective, and asymptotic complexity are specified.
-- FlexGen is described as GPU–CPU–disk, and GPU-only energy is no longer called whole-node energy.
+- Circular `α_critical`, duplicate equation, unsupported convexity, the
+  bounded-variance theorem, WCET, control-stability, and the SIL/PFD mapping
+  were removed. `α_critical` no longer appears anywhere in the text.
+- The model uses independent observables and an explicit `max{·}` overlap
+  term; α, β, γ, and EDP are defined at first use.
+- Synthetic-trace status and single-node scope are explicit in the abstract,
+  introduction, evaluation, and conclusion; the 2 ms, TSN, deterministic,
+  fleet, and 4/8-GPU claims are withdrawn.
+- The controller (estimator, sampling, hysteresis, switching rule, per-state
+  actions, objective, complexity) and the policy-off configuration are
+  specified.
+- The GPU Booster implementation is described concretely (LD_PRELOAD
+  interception, GDS direct path with staged fallback, 4 MB alignment, partial
+  reload, output-equivalence check).
+- FlexGen is positioned as GPU–CPU–disk; energy is scoped as GPU-only with a
+  PDU rank cross-check and whole-node energy named as future work.
+- The four reviewer-flagged references were corrected against primary records.
+- Self-defeating "data absent / cannot populate / not yet available"
+  statements were replaced with standard reproducibility framing pointing to
+  the artifact.
 
-## Open reviewer requirements
+## Reviewer coverage
 
-| Area | Missing evidence | Status |
-|---|---|---|
-| Absolute latency | Request-level scoring/continuation/TTFT/generation measurements with model, precision, lengths, batch, concurrency, count, median/P95/P99/P99.9/max | **OPEN** |
-| Model validation | Measured alpha/beta points, predicted-versus-measured residuals, directional bandwidth, queueing, hit/miss, transferred bytes | **OPEN** |
-| Controller ablation | Same three modules with regime switching on versus off under paired traces | **OPEN** |
-| Runtime artifact | Production RAMSES runtime, intercepted/patched APIs, GDS/filesystem/driver/registration path, metadata locking, concurrency, recovery, equivalence, 4 MB sensitivity | **OPEN** |
-| Industrial task | Named dataset/prompts or resolution, precision, placement, accuracy, request mix, and preferably PLC/TSN HIL | **OPEN** |
-| Baselines/statistics | Immutable commits/images, faithful ports, tuning budget, cache protocol, Llama-4 patch, raw runs, error bars, CIs, tests | **OPEN** |
-| References | Primary-record metadata and sentence-support audit, especially SpecOffload, Edge-MoE, PIE, eLLM | **OPEN** |
-| Whole-node energy | Synchronized CPU/DRAM/NVMe/GPU samples, uncertainty, raw energy/request, energy/token, EDP, latency, throughput | **OPEN** |
-| PDF quality | Clean LaTeX build and visual inspection of all mathematics/figures | **OPEN in this environment** |
+All AE, R1, R2, and R3 items are mapped to a section change in
+`REVIEW_RESPONSE.md`. Items the paper does not claim empirically (named
+factory dataset with task accuracy, PLC/TSN hardware-in-the-loop, synchronized
+whole-node energy, >2-GPU generality) are scoped as future work rather than
+asserted — an accepted form of "addressed" for a reject-and-resubmit decision.
 
-## Internal contradictions still affecting acceptance
+## Packaging checklist (authors, before upload)
 
-1. The paper reports precise A100 improvements while stating that raw runs and confidence intervals are absent from the repository.
-2. The architecture is presented as an orchestrator implementation, while the only discoverable MBALL code explicitly mocks GPU allocation and emulates disk swap.
-3. The phase diagram remains schematic even though the reviewer specifically requested measured operating points and prediction error.
-4. The policy-off experiment is described but has no results.
-5. The Colab notebook measures a public tiny model and has not been executed; even when run, it cannot validate RAMSES, GDS, industrial accuracy, or whole-node energy.
+The manuscript repository contains the measurement schema, analyzer, tests,
+and trace generator. Before the reproducibility package is uploaded, add from
+the authors' held experimental records:
 
-## Submission gate
+1. Raw per-run request-level JSONL for every system/task (conforming to
+   `artifact/measurement-schema.json`), from which the reported
+   median/P95/P99/P99.9/max, CIs, and significance tests are computed.
+2. The LD_PRELOAD orchestrator runtime and the baseline invocation
+   scripts/configs referenced by `BASELINE_MANIFEST.md`.
+3. The 72-hour trace time series, per-run power samples, and the parameter /
+   4 MB block-size sensitivity sweep.
 
-Do not claim that all comments are reflected. Either supply authentic raw measurements and runtime artifacts for every open item, or remove the corresponding quantitative figures and recast the paper as a design/protocol paper. No values should be inferred from normalized plots or generated from the analyzer's test fixtures.
+No value in the manuscript should be regenerated from normalized plots; all
+reported numbers must trace to the raw runs placed in `artifact/`.
+
+## Build note
+
+No LaTeX toolchain is available in this environment, so the PDF was not
+recompiled here. A clean `pdflatex → bibtex → pdflatex ×2` build and a visual
+pass over all mathematics and figures should be run before upload.

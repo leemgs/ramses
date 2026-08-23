@@ -1,0 +1,19 @@
+% Auto-populated by artifact/make_tables.py from synchronized whole-node energy.
+% Body rows: System & Energy/req (J) & Energy/token (J) & EDP (J*ms) & Throughput (tok/s).
+\begin{table}[t]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Whole-node energy per request and per token, energy--delay product
+(EDP), and throughput from synchronized CPU/DRAM/NVMe/GPU integration. \capinfo}
+\label{tab:energy}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{System} & \textbf{Energy/req} & \textbf{Energy/token} & \textbf{EDP} & \textbf{Throughput} \\
+ & (J) & (J) & (J$\cdot$ms) & (tok/s) \\
+\midrule
+\IfFileExists{tables/energy_body.tex}
+  {\input{tables/energy_body.tex}}
+  {\multicolumn{5}{c}{\emph{Generated from whole-node power logs via \texttt{artifact/make\_tables.py}.}}\\}
+\bottomrule
+\end{tabular}
+\end{table}

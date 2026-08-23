@@ -1,0 +1,20 @@
+% Auto-populated by artifact/make_tables.py from measured (alpha,beta,predicted).
+% Body rows: System & alpha & beta & MAE (ms) & RMSE (ms) & Prefetch hit rate.
+\begin{table}[t]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Operating-model validation: measured mean pressure ratios, prediction
+error of Eq.~\eqref{eq:latency_total} against end-to-end latency, and prefetch
+hit rate. \capinfo}
+\label{tab:model_validation}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{System} & $\boldsymbol{\alpha}$ & $\boldsymbol{\beta}$ & \textbf{MAE} & \textbf{RMSE} & \textbf{Prefetch} \\
+ & & & (ms) & (ms) & \textbf{hit rate} \\
+\midrule
+\IfFileExists{tables/model_validation_body.tex}
+  {\input{tables/model_validation_body.tex}}
+  {\multicolumn{6}{c}{\emph{Generated from measured counters via \texttt{artifact/make\_tables.py}.}}\\}
+\bottomrule
+\end{tabular}
+\end{table}

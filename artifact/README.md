@@ -15,8 +15,14 @@ Columns are timestamp, request class, and requested concurrency. The nominal per
 ```sh
 artifact/preflight.sh
 python3 artifact/analyze_results.py raw.jsonl summary.csv
+python3 artifact/compute_stats.py raw.jsonl stats.csv --baseline default --compare ramses
 python3 -m unittest discover -s artifact/tests -v
 ```
+
+`compute_stats.py` reports run-level mean, standard deviation, and Student-t
+95% confidence intervals, plus a two-sample significance test between systems.
+See `AUTHOR_DATA_GUIDE.md` for the step-by-step procedure to populate the raw
+measurements (B) and the named industrial task with accuracy (C).
 
 A publishable run requires CUDA-capable hardware, NUMA/NVMe tools, the RAMSES runtime, baseline ports, and a synchronized whole-node power meter. The preflight script fails when these prerequisites are absent.
 

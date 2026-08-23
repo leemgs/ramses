@@ -24,6 +24,36 @@ python3 -m unittest discover -s artifact/tests -v
 See `AUTHOR_DATA_GUIDE.md` for the step-by-step procedure to populate the raw
 measurements (B) and the named industrial task with accuracy (C).
 
+## Generating paper tables and figures
+
+The manuscript's new tables and figures are populated from the CSVs above, so
+no numbers are hand-entered. The LaTeX wrappers in `../tables/` include the
+generated bodies through `\IfFileExists` guards, so the paper compiles both
+before and after the data is produced.
+
+```sh
+# tables -> ../tables/*_body.tex  (percentiles, energy, model validation,
+#                                  policy-off, industrial accuracy, CI)
+python3 artifact/make_tables.py --summary summary.csv --stats stats.csv \
+        --industrial industrial_accuracy.csv --outdir ../tables --task ttft
+
+# figures -> ../figures/*.png  (consolidated w/ error bars, energy-latency,
+#                               measured phase overlay, sensitivity)
+python3 artifact/make_figures.py --summary summary.csv --stats stats.csv \
+        --sensitivity sensitivity.csv --outdir ../figures
+
+# named industrial task (accuracy + output equivalence) -> JSONL + CSV
+python3 artifact/eval_industrial.py --dataset mvtec_ad --data-root /path/to/mvtec \
+        --model vit-h14 --precision fp16 \
+        --out-jsonl industrial.jsonl --out-csv industrial_accuracy.csv
+```
+
+`make_tables.py` and `make_figures.py` emit output only for data present in the
+CSVs; absent metrics produce no rows or figures (never placeholder numbers).
+`eval_industrial.py` ships complete metric/equivalence/output machinery; wire
+its `load_dataset()` and `run_model()` hooks to your dataset and serving
+backend.
+
 A publishable run requires CUDA-capable hardware, NUMA/NVMe tools, the RAMSES runtime, baseline ports, and a synchronized whole-node power meter. The preflight script fails when these prerequisites are absent.
 
 ## Implementation provenance

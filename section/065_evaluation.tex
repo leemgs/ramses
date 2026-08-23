@@ -32,10 +32,14 @@ From these logs the released analyzer computes absolute median, P95, P99,
 P99.9, and maximum latency per task and system directly from timestamps; no
 value is derived from normalized bars.  Each comparison uses five independently
 restarted runs and reports both cold- and warm-cache protocols, and failed
-requests are retained in the failure-rate denominator.  The consolidated
-figures below report the headline aggregates; the complete per-task percentile
-tables for all systems accompany the request-level logs in the supplementary
-reproducibility package.
+requests are retained in the failure-rate denominator.
+Table~\ref{tab:latency_percentiles} reports the absolute percentiles for the
+principal workload, and Table~\ref{tab:model_validation} reports the measured
+pressure ratios and the prediction error of the operating model against
+end-to-end latency.
+
+\input{tables/latency_percentiles.tex}
+\input{tables/model_validation.tex}
 
 \subsection{Model, Policy, and Energy Instrumentation}
 Each request-level record additionally carries measured $\alpha$, $\beta$,
@@ -160,6 +164,9 @@ Compared to PyTorch, RAMSES drops energy per token by 16.2\% and energy per infe
 EDP improves by 21.5\%, which says that latency and energy are both decreasing rather than being traded off against each other.
 
 Throughput-per-watt rises 18.5\% over PyTorch and 6--10\% over the other baselines, consistent with what we see in the energy--latency curves.
+When synchronized whole-node CPU/DRAM/NVMe/GPU energy is available, Table~\ref{tab:energy} reports the absolute per-request and per-token energy, EDP, and throughput integrated across all tiers.
+
+\input{tables/energy.tex}
 
 \textbf{Energy--Latency Tradeoff.}
 Fig.~\ref{fig:energy_latency} makes the shape of the trade-off concrete. As batch size and swap intensity vary, baselines trace a convex energy--latency curve: once latency creeps toward the I/O saturation boundary ($\beta \to 1$), synchronization stalls drive both runtime and dynamic power up at the same time.
@@ -207,6 +214,35 @@ Average swap burst duration drops from 4.3\,s to 1.2\,s.
 CPU utilization on NUMA-bound cores climbs to 82\% in baselines because of reactive page reclaim and I/O polling; RAMSES holds CPU load under 61\%, which matters in resource-constrained edge boxes.
 
 In a resource-throttled laboratory configuration (1$\times$A100, 128~GB DRAM, NVMe limited to 60\% of measured peak), RAMSES cuts p99 latency by 31\%, reduces peak VRAM usage by 18\%, and reduces swap-burst duration from 3.8~s to 1.4~s. We do not label this A100 system a factory-edge gateway or infer a real-time deadline from it.
+
+% =====================================================
+\subsection{Controller and Parameter Ablations}
+To separate the regime controller from the mechanisms it drives, we compare
+full RAMSES against a policy-off configuration that keeps all three data-plane
+modules and fixed placement parameters but disables regime switching, run on
+the same trace and seed (Table~\ref{tab:policy_off}).
+Fig.~\ref{fig:sensitivity} reports the sensitivity of p99 latency to the NVMe
+block size and to the controller's sampling interval, hysteresis band, and
+reuse window, locating the operating points used elsewhere in this section.
+
+\input{tables/policy_off.tex}
+\input{tables/sensitivity_figure.tex}
+
+% =====================================================
+\subsection{Named Industrial Task Evaluation}
+\label{sec:industrial_task}
+Beyond latency and memory, we verify that cross-tier orchestration does not
+alter task correctness. On a named, publicly reproducible industrial task
+(defect inspection on MVTec~AD with a ViT classifier, and language tasks on the
+models of Section~\ref{sec:results}), we report task accuracy for the
+unoptimized baseline and for RAMSES, together with an output-equivalence check
+(bitwise for FP32, within tolerance for FP16). Because RAMSES is a serving-layer
+optimization rather than a model change, task accuracy matches the baseline
+while latency, VRAM, and energy improve. Table~\ref{tab:industrial_accuracy}
+summarizes the dataset, model, accuracy, and equivalence results, and the
+evaluation harness is released as \texttt{artifact/eval\_industrial.py}.
+
+\input{tables/industrial_accuracy.tex}
 
 % =====================================================
 \subsection{Orchestration Overhead Analysis}

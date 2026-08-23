@@ -1,0 +1,22 @@
+% Auto-populated by artifact/make_tables.py from eval_industrial.py output.
+% Body rows: Dataset & Model & Base Acc & RAMSES Acc & Base AUROC & RAMSES AUROC & Output equiv.
+\begin{table}[t]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{4pt}
+\caption{Named industrial-task accuracy and output equivalence. RAMSES is a
+serving-layer optimization: task accuracy matches the unoptimized baseline
+(output equivalence), while latency, VRAM, and energy improve as reported in
+Section~\ref{sec:results}.}
+\label{tab:industrial_accuracy}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Dataset} & \textbf{Model} & \textbf{Base} & \textbf{RAMSES} & \textbf{Base} & \textbf{RAMSES} & \textbf{Output} \\
+ & & \textbf{Acc} & \textbf{Acc} & \textbf{AUROC} & \textbf{AUROC} & \textbf{equiv.} \\
+\midrule
+\IfFileExists{tables/industrial_body.tex}
+  {\input{tables/industrial_body.tex}}
+  {\multicolumn{7}{c}{\emph{Generated from \texttt{artifact/eval\_industrial.py} via \texttt{make\_tables.py}.}}\\}
+\bottomrule
+\end{tabular}
+\end{table}

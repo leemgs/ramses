@@ -1,0 +1,20 @@
+% Auto-populated by artifact/make_tables.py from paired full vs policy-off runs.
+% Body rows: Configuration & P99 (ms) & P99.9 (ms) & Energy/req (J).
+\begin{table}[t]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Controller ablation: full RAMSES versus a policy-off configuration
+that retains all three data-plane modules but disables regime switching, run on
+the same trace and seed. \capinfo}
+\label{tab:policy_off}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Configuration} & \textbf{P99} & \textbf{P99.9} & \textbf{Energy/req} \\
+ & (ms) & (ms) & (J) \\
+\midrule
+\IfFileExists{tables/policy_off_body.tex}
+  {\input{tables/policy_off_body.tex}}
+  {\multicolumn{4}{c}{\emph{Generated from paired runs via \texttt{artifact/make\_tables.py}.}}\\}
+\bottomrule
+\end{tabular}
+\end{table}

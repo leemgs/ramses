@@ -1,0 +1,19 @@
+% Auto-populated by artifact/make_tables.py from measured request-level logs.
+% Body rows: System & Median & P95 & P99 & P99.9 & Max (ms).
+\begin{table}[t]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Absolute per-task latency percentiles (TTFT) on the principal
+Llama-4 17B workload, from raw request-level logs. \capinfo}
+\label{tab:latency_percentiles}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{System} & \textbf{Median} & \textbf{P95} & \textbf{P99} & \textbf{P99.9} & \textbf{Max} \\
+ & (ms) & (ms) & (ms) & (ms) & (ms) \\
+\midrule
+\IfFileExists{tables/latency_percentiles_body.tex}
+  {\input{tables/latency_percentiles_body.tex}}
+  {\multicolumn{6}{c}{\emph{Generated from raw measurements via \texttt{artifact/make\_tables.py}.}}\\}
+\bottomrule
+\end{tabular}
+\end{table}

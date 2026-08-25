@@ -3,7 +3,7 @@
 from pathlib import Path
 import re, sys
 ROOT=Path(__file__).resolve().parents[1]
-text='\n'.join(p.read_text() for p in sorted((ROOT/'section').glob('*.tex')))
+text='\n'.join(p.read_text() for p in sorted((ROOT/'paper'/'section').glob('*.tex')))
 checks={
  'raw measurements explicitly absent': r'Raw per-run observations are not in this repository',
  'compatibility patch absent': r'exact compatibility patch and invocation must be supplied',

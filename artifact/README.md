@@ -48,11 +48,14 @@ python3 artifact/eval_industrial.py --dataset mvtec_ad --data-root /path/to/mvte
         --out-jsonl industrial.jsonl --out-csv industrial_accuracy.csv
 ```
 
-The repository-root `industrial_accuracy.csv` and `sensitivity.csv` files are
-ready-to-fill CSV templates with the exact headers consumed by these commands.
-They intentionally contain no result rows: populate them only from measured
-industrial-task and sensitivity runs. `summary.csv` and `stats.csv` are output
-files generated from the supplied `raw.jsonl` by the first two commands.
+The repository root includes a complete **synthetic mock-data set**
+(`raw.jsonl`, `summary.csv`, `stats.csv`, `industrial_accuracy.csv`, and
+`sensitivity.csv`) so all four commands can be smoke-tested end to end. Every
+raw record carries `data_source=synthetic_mock_for_pipeline_testing_only`, and
+the mock industrial dataset name is `mock_mvtec_ad`. These values are test
+fixtures only: they are not measurements and must not be cited in the paper.
+Replace `raw.jsonl`, `industrial_accuracy.csv`, and `sensitivity.csv` with real
+measurements, then regenerate `summary.csv` and `stats.csv` before publication.
 
 `make_tables.py` and `make_figures.py` emit output only for data present in the
 CSVs; absent metrics produce no rows or figures (never placeholder numbers).

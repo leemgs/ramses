@@ -1,1 +1,2 @@
 dataset,model,precision,n_items,baseline_accuracy,ramses_accuracy,baseline_auroc,ramses_auroc,output_equivalence
+mock_mvtec_ad,vit-h14,fp16,120,0.941667,0.941667,0.978421,0.978421,1.0

@@ -67,11 +67,11 @@ calibration uncertainty, dropped-sample count을 함께 기록(스키마 상 별
 
 ### B3. 파이프라인 실행
 ```sh
-artifact/preflight.sh                                   # 하드웨어/툴 점검 (fail-closed)
-python3 artifact/analyze_results.py raw.jsonl summary.csv
-python3 artifact/compute_stats.py raw.jsonl stats.csv \
+code/preflight.sh                                   # 하드웨어/툴 점검 (fail-closed)
+python3 code/analyze_results.py code/data/raw.jsonl code/data/summary.csv
+python3 code/compute_stats.py code/data/raw.jsonl code/data/stats.csv \
         --metric latency_ms --baseline default --compare ramses
-python3 -m unittest discover -s artifact/tests -v
+python3 -m unittest discover -s code/tests -v
 ```
 - `summary.csv`: (system,task,config)별 median/P95/P99/P99.9/max, MAE/RMSE,
   prefetch hit rate, 방향별 트래픽, energy/request, energy/token, EDP.
@@ -154,7 +154,7 @@ RAMSES는 서빙 최적화이지 모델 변경이 아니므로, **동일 입력�
 ---
 
 ## 제출 전 최종 체크리스트
-- [ ] `raw.jsonl` (모든 system×task×config×5run, cold/warm) 를 `artifact/`에 포함
+- [ ] `raw.jsonl` (모든 system×task×config×5run, cold/warm) 를 `code/data/`에 포함
 - [ ] `summary.csv`, `stats.csv` 재생성 후 본문 수치와 일치 확인
 - [ ] whole-node 에너지(J/req·J/token·EDP) 표 승격
 - [ ] policy-off·민감도 결과 표/그림 추가

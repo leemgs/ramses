@@ -1,7 +1,7 @@
 # Final reviewer-completeness audit
 
 **Verdict: READY FOR RESUBMISSION**, contingent on the authors bundling their
-held raw data and runtime into `artifact/` before uploading the package (see
+held raw data and runtime into `../code/data/` before uploading the package (see
 "Packaging checklist" below). Every reviewer comment is addressed in the
 manuscript either by substantive revision or by explicit, defensible scoping,
 and the manuscript is now internally consistent.
@@ -44,7 +44,7 @@ and trace generator. Before the reproducibility package is uploaded, add from
 the authors' held experimental records:
 
 1. Raw per-run request-level JSONL for every system/task (conforming to
-   `artifact/measurement-schema.json`), from which the reported
+   `../code/measurement-schema.json`), from which the reported
    median/P95/P99/P99.9/max, CIs, and significance tests are computed.
 2. The LD_PRELOAD orchestrator runtime and the baseline invocation
    scripts/configs referenced by `BASELINE_MANIFEST.md`.
@@ -52,7 +52,7 @@ the authors' held experimental records:
    4 MB block-size sensitivity sweep.
 
 No value in the manuscript should be regenerated from normalized plots; all
-reported numbers must trace to the raw runs placed in `artifact/`.
+reported numbers must trace to the raw runs placed in `../code/data/`.
 
 ## Build note
 

@@ -2,18 +2,23 @@
 """Generate LaTeX table bodies from *measured* RAMSES results.
 
 Reads the CSVs produced by analyze_results.py (summary) and compute_stats.py
-(stats) and writes booktabs table bodies to tables/*_body.tex. It emits a row
+(stats) and writes booktabs table bodies to paper/tables/*_body.tex. It emits a row
 only for data that exists in the CSV: no placeholder numbers are ever written.
 If a required CSV is missing the corresponding table body is not generated, and
 the LaTeX wrapper's \\IfFileExists guard keeps the paper compilable.
 
 Usage:
-    python3 make_tables.py --summary summary.csv --stats stats.csv \
-        --outdir ../tables --task ttft --model llama4-17b
+    python3 code/make_tables.py --summary code/data/summary.csv \
+        --stats code/data/stats.csv --outdir paper/tables \
+        --task ttft --model llama4-17b
 
 Standard library only.
 """
 import argparse, csv, os
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(REPO_ROOT, "code", "data")
+PAPER_TABLES = os.path.join(REPO_ROOT, "paper", "tables")
 
 # Display order and human labels for systems.
 SYS_ORDER = ["default", "flexgen", "swapadvisor", "neo", "specoffload", "vllm",
@@ -157,10 +162,10 @@ def table_industrial(industrial, outdir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--summary", default="summary.csv")
-    ap.add_argument("--stats", default="stats.csv")
-    ap.add_argument("--industrial", default="industrial_accuracy.csv")
-    ap.add_argument("--outdir", default="../tables")
+    ap.add_argument("--summary", default=os.path.join(DATA_DIR, "summary.csv"))
+    ap.add_argument("--stats", default=os.path.join(DATA_DIR, "stats.csv"))
+    ap.add_argument("--industrial", default=os.path.join(DATA_DIR, "industrial_accuracy.csv"))
+    ap.add_argument("--outdir", default=PAPER_TABLES)
     ap.add_argument("--task", default="ttft", help="filter task; empty for all")
     ap.add_argument("--model", default="", help="filter model; empty for all")
     a = ap.parse_args()

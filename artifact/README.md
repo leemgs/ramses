@@ -48,6 +48,12 @@ python3 artifact/eval_industrial.py --dataset mvtec_ad --data-root /path/to/mvte
         --out-jsonl industrial.jsonl --out-csv industrial_accuracy.csv
 ```
 
+The repository-root `industrial_accuracy.csv` and `sensitivity.csv` files are
+ready-to-fill CSV templates with the exact headers consumed by these commands.
+They intentionally contain no result rows: populate them only from measured
+industrial-task and sensitivity runs. `summary.csv` and `stats.csv` are output
+files generated from the supplied `raw.jsonl` by the first two commands.
+
 `make_tables.py` and `make_figures.py` emit output only for data present in the
 CSVs; absent metrics produce no rows or figures (never placeholder numbers).
 `eval_industrial.py` ships complete metric/equivalence/output machinery; wire

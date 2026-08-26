@@ -27,7 +27,7 @@ generation), \emph{continuation} (one warm decode step), \emph{TTFT} (request
 arrival through first emitted token), or \emph{generation} (arrival through the
 final token).  For every task and system we log the model, numerical precision,
 input/output token counts, batch size, concurrency, request count, and run
-identifier, following the schema in \texttt{artifact/measurement-schema.json}.
+identifier, following the schema in \texttt{../code/measurement-schema.json}.
 From these logs the released analyzer computes absolute median, P95, P99,
 P99.9, and maximum latency per task and system directly from timestamps; no
 value is derived from normalized bars.  Each comparison uses five independently
@@ -57,7 +57,7 @@ in the energy--latency subsection below); NVML GPU energy is never substituted
 for CPU, DRAM, or NVMe consumption.  Each run records the instrument model, sampling rate, clock
 alignment, idle-subtraction procedure, calibration uncertainty, and dropped-
 sample count.  The measurement schema and analysis programs are included under
-\texttt{artifact/}.  Synchronized whole-node CPU/DRAM/NVMe/GPU energy
+\texttt{../code/data/}.  Synchronized whole-node CPU/DRAM/NVMe/GPU energy
 integration requires rack-level metering beyond the GPU-only scope of this
 study and is identified as future work in Section~\ref{sec:discussion}.
 
@@ -240,7 +240,7 @@ unoptimized baseline and for RAMSES, together with an output-equivalence check
 optimization rather than a model change, task accuracy matches the baseline
 while latency, VRAM, and energy improve. Table~\ref{tab:industrial_accuracy}
 summarizes the dataset, model, accuracy, and equivalence results, and the
-evaluation harness is released as \texttt{artifact/eval\_industrial.py}.
+evaluation harness is released as \texttt{../code/eval\_industrial.py}.
 
 \input{tables/industrial_accuracy.tex}
 

@@ -103,7 +103,7 @@ def main():
     rows = load(a.input, a.metric)
     summary = summarize(rows, a.metric)
     with open(a.output, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(summary[0]))
+        w = csv.DictWriter(f, fieldnames=list(summary[0]), lineterminator="\n")
         w.writeheader()
         w.writerows(summary)
     print(f"wrote {len(summary)} group rows to {a.output}")

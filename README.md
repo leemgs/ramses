@@ -26,8 +26,8 @@ latexmk -pdf main.tex
 [`code/README.md`](code/README.md)에 정리되어 있습니다.
 
 ```sh
-python3 code/analyze_results.py code/data/raw.jsonl code/data/summary.csv
-python3 code/compute_stats.py code/data/raw.jsonl code/data/stats.csv \
+python3 code/analyze_results.py code/data/actual/raw.jsonl code/data/actual/summary.csv
+python3 code/compute_stats.py code/data/actual/raw.jsonl code/data/actual/stats.csv \
         --baseline default --compare ramses
 python3 code/make_tables.py
 python3 code/make_figures.py

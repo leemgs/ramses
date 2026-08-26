@@ -68,8 +68,8 @@ calibration uncertainty, dropped-sample count을 함께 기록(스키마 상 별
 ### B3. 파이프라인 실행
 ```sh
 code/preflight.sh                                   # 하드웨어/툴 점검 (fail-closed)
-python3 code/analyze_results.py code/data/raw.jsonl code/data/summary.csv
-python3 code/compute_stats.py code/data/raw.jsonl code/data/stats.csv \
+python3 code/analyze_results.py code/data/actual/raw.jsonl code/data/actual/summary.csv
+python3 code/compute_stats.py code/data/actual/raw.jsonl code/data/actual/stats.csv \
         --metric latency_ms --baseline default --compare ramses
 python3 -m unittest discover -s code/tests -v
 ```

@@ -20,8 +20,8 @@ Columns are timestamp, request class, and requested concurrency. The nominal per
 
 ```sh
 code/preflight.sh
-python3 code/analyze_results.py code/data/raw.jsonl code/data/summary.csv
-python3 code/compute_stats.py code/data/raw.jsonl code/data/stats.csv \
+python3 code/analyze_results.py code/data/actual/raw.jsonl code/data/actual/summary.csv
+python3 code/compute_stats.py code/data/actual/raw.jsonl code/data/actual/stats.csv \
         --baseline default --compare ramses
 python3 -m unittest discover -s code/tests -v
 ```
@@ -41,31 +41,28 @@ before and after the data is produced.
 ```sh
 # tables -> paper/tables/*_body.tex  (percentiles, energy, model validation,
 #                                  policy-off, industrial accuracy, CI)
-python3 code/make_tables.py --summary code/data/summary.csv \
-        --stats code/data/stats.csv --industrial code/data/industrial_accuracy.csv \
+python3 code/make_tables.py --summary code/data/actual/summary.csv \
+        --stats code/data/actual/stats.csv --industrial code/data/actual/industrial_accuracy.csv \
         --outdir paper/tables --task ttft
 
 # figures -> paper/figures/*.png  (consolidated w/ error bars, energy-latency,
 #                               measured phase overlay, sensitivity)
-python3 code/make_figures.py --summary code/data/summary.csv \
-        --stats code/data/stats.csv --sensitivity code/data/sensitivity.csv \
+python3 code/make_figures.py --summary code/data/actual/summary.csv \
+        --stats code/data/actual/stats.csv --sensitivity code/data/actual/sensitivity.csv \
         --outdir paper/figures
 
 # named industrial task (accuracy + output equivalence) -> JSONL + CSV
 python3 code/eval_industrial.py --dataset mvtec_ad --data-root /path/to/mvtec \
         --model vit-h14 --precision fp16 \
-        --out-jsonl code/data/industrial.jsonl \
-        --out-csv code/data/industrial_accuracy.csv
+        --out-jsonl code/data/actual/industrial.jsonl \
+        --out-csv code/data/actual/industrial_accuracy.csv
 ```
 
-The `code/data/` directory includes a complete **synthetic mock-data set**
-(`raw.jsonl`, `summary.csv`, `stats.csv`, `industrial_accuracy.csv`, and
-`sensitivity.csv`) so all four commands can be smoke-tested end to end. Every
-raw record carries `data_source=synthetic_mock_for_pipeline_testing_only`, and
-the mock industrial dataset name is `mock_mvtec_ad`. These values are test
-fixtures only: they are not measurements and must not be cited in the paper.
-Replace `raw.jsonl`, `industrial_accuracy.csv`, and `sensitivity.csv` with real
-measurements, then regenerate `summary.csv` and `stats.csv` before publication.
+The `code/data/expected/` directory contains deterministic, realistic-looking
+planning projections. They are isolated from `code/data/actual/`, which is
+reserved for future measurements. Expected values must not be cited or used to
+generate publication tables. See [`data/README.md`](data/README.md) for the
+regeneration and expected-versus-actual comparison workflow.
 
 `make_tables.py` and `make_figures.py` emit output only for data present in the
 CSVs; absent metrics produce no rows or figures (never placeholder numbers).

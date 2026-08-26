@@ -1,0 +1,3 @@
+dataset,model,precision,n_items,baseline_accuracy,ramses_accuracy,baseline_auroc,ramses_auroc,output_equivalence
+expected_mvtec_ad,vit-h14,fp16,1725,0.952,0.952,0.981,0.981,0.999
+expected_visa,vit-h14,fp16,2162,0.938,0.938,0.972,0.972,0.999

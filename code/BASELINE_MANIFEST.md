@@ -16,6 +16,6 @@ environment when assembling the reproducibility package.
 | RAMSES | LD_PRELOAD orchestrator (artifact) | record | interception layer (included in artifact) | FP16/FP32 | cold + warm | same budget |
 
 Raw attachments in the reproducibility package: request-level JSONL
-conforming to `artifact/measurement-schema.json`, stdout/stderr, environment
+conforming to `code/measurement-schema.json`, stdout/stderr, environment
 lockfile, GPU/driver/filesystem inventory, trace hash, seeds, per-run power
 samples, and failure log.

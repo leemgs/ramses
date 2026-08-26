@@ -70,7 +70,7 @@ scoped as GPU-only with a PDU rank cross-check.
 - **Single-node scope.** The contribution and title are scoped to single-node
   serving; unsupported multi-GPU/fleet generalization was removed and the
   two-GPU results are explicitly bounded (Section IV, *Multi-GPU Scope*).
-- **Trace scripts during review.** `artifact/generate_trace.py` is included
+- **Trace scripts during review.** `../code/generate_trace.py` is included
   and referenced in the text; the schedule regenerates deterministically from
   the published seed and parameters.
 - **Duplicate equation / clean build.** The duplicated transfer equation was

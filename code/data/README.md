@@ -45,6 +45,11 @@ python3 code/compare_expected.py code/data/expected/summary.csv \
         code/data/actual/summary.csv code/data/actual/comparison.csv
 ```
 
+The comparison report retains the union of both matrices and labels every row
+as `matched`, `expected_only`, or `actual_only`; this makes missing and newly
+measured configurations explicit during review. It also rejects an "actual"
+input carrying the synthetic provenance marker.
+
 Only files derived from `actual/` may be used to generate publication tables
 and figures. `make_tables.py` and `make_figures.py` fail closed if an input row
 contains a synthetic provenance marker.

@@ -6,7 +6,7 @@ Google Colab free GPU was selected as the only suitable no-cost target for the s
 
 ## What is now executable
 
-`artifact/colab_experiment.ipynb` is a one-click, GPU-required notebook. It pins the software environment, prints GPU/driver provenance, uses a public tiny GPT-2 checkpoint, performs five runs and 100 requests per run, separates scoring, warm continuation, TTFT, and generation, prints median/P95/P99/P99.9/max, and downloads request-level JSONL.
+`code/colab_experiment.ipynb` is a one-click, GPU-required notebook. It pins the software environment, prints GPU/driver provenance, uses a public tiny GPT-2 checkpoint, performs five runs and 100 requests per run, separates scoring, warm continuation, TTFT, and generation, prints median/P95/P99/P99.9/max, and downloads request-level JSONL.
 
 ## Scientific boundary
 

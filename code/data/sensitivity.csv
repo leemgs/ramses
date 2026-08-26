@@ -1,0 +1,15 @@
+param,value,p99_ms
+block_size_mb,1,488
+block_size_mb,2,452
+block_size_mb,4,421
+block_size_mb,8,436
+block_size_mb,16,471
+sampling_ms,100,429
+sampling_ms,200,421
+sampling_ms,400,447
+hysteresis_pct,2,438
+hysteresis_pct,5,421
+hysteresis_pct,10,445
+reuse_window,16,439
+reuse_window,32,421
+reuse_window,64,432

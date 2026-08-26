@@ -15,12 +15,17 @@ Figures:
   4. sensitivity.png           -- p99 vs block size / controller parameter sweep.
 
 Usage:
-    python3 make_figures.py --summary summary.csv --stats stats.csv \
-        --sensitivity sensitivity.csv --outdir ../figures --task ttft
+    python3 code/make_figures.py --summary code/data/summary.csv \
+        --stats code/data/stats.csv --sensitivity code/data/sensitivity.csv \
+        --outdir paper/figures --task ttft
 
 Requires matplotlib and numpy in the author's environment.
 """
 import argparse, csv, os
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(REPO_ROOT, "code", "data")
+PAPER_FIGURES = os.path.join(REPO_ROOT, "paper", "figures")
 
 
 def read_csv(path):
@@ -164,10 +169,10 @@ def fig_sensitivity(sens, outdir, plt):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--summary", default="summary.csv")
-    ap.add_argument("--stats", default="stats.csv")
-    ap.add_argument("--sensitivity", default="sensitivity.csv")
-    ap.add_argument("--outdir", default="../figures")
+    ap.add_argument("--summary", default=os.path.join(DATA_DIR, "summary.csv"))
+    ap.add_argument("--stats", default=os.path.join(DATA_DIR, "stats.csv"))
+    ap.add_argument("--sensitivity", default=os.path.join(DATA_DIR, "sensitivity.csv"))
+    ap.add_argument("--outdir", default=PAPER_FIGURES)
     ap.add_argument("--task", default="ttft")
     ap.add_argument("--model", default="")
     a = ap.parse_args()

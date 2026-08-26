@@ -54,5 +54,5 @@ def aggregate(rows):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("input"); ap.add_argument("output"); a=ap.parse_args()
     rows=aggregate(load(a.input)); fields=list(rows[0])
-    with open(a.output,"w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
+    with open(a.output,"w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields,lineterminator="\n"); w.writeheader(); w.writerows(rows)
 if __name__=="__main__": main()

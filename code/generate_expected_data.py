@@ -127,7 +127,7 @@ def write_sensitivity(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", type=Path,
-                        default=Path(__file__).resolve().parent / "data")
+                        default=Path(__file__).resolve().parent / "data" / "expected")
     parser.add_argument("--seed", type=int, default=20260826)
     parser.add_argument("--requests-per-run", type=int, default=20)
     args = parser.parse_args()
@@ -135,7 +135,7 @@ def main():
     write_raw(args.outdir / "raw.jsonl", args.seed, args.requests_per_run)
     write_industrial(args.outdir / "industrial_accuracy.csv")
     write_sensitivity(args.outdir / "sensitivity.csv")
-    print(f"wrote synthetic planning projections to {args.outdir}")
+    print(f"wrote isolated synthetic planning projections to {args.outdir}")
 
 
 if __name__ == "__main__":

@@ -26,14 +26,14 @@ latexmk -pdf main.tex
 [`code/README.md`](code/README.md)에 정리되어 있습니다.
 
 ```sh
-python3 code/analyze_results.py code/data/raw.jsonl code/data/summary.csv
-python3 code/compute_stats.py code/data/raw.jsonl code/data/stats.csv \
+python3 code/analyze_results.py code/data/actual/raw.jsonl code/data/actual/summary.csv
+python3 code/compute_stats.py code/data/actual/raw.jsonl code/data/actual/stats.csv \
         --baseline default --compare ramses
 python3 code/make_tables.py
 python3 code/make_figures.py
 python3 -m unittest discover -s code/tests -v
 ```
 
-`code/data/`에 포함된 값은 실험 계획과 파이프라인 점검을 위한 합성 기대값이며
-논문의 실측 결과로 인용해서는 안 됩니다. 출판 전 실제 측정 데이터로 교체하고
-모든 synthetic provenance marker가 제거되었는지 검증해야 합니다.
+`code/data/expected/`의 값은 실험 계획과 파이프라인 점검용 합성 기대값이며
+논문의 실측 결과로 인용해서는 안 됩니다. 실제 측정값은
+`code/data/actual/`에 별도로 저장하고 두 데이터 집합을 비교해야 합니다.

@@ -29,6 +29,8 @@ def aggregate(rows):
     for key,rs in sorted(groups.items()):
         lat=[float(r["latency_ms"]) for r in rs]
         d=dict(zip(keys,key)); d.update(requests=sum(int(r["request_count"]) for r in rs), runs=len(set(r["run_id"] for r in rs)))
+        sources={r.get("data_source", "") for r in rs if r.get("data_source")}
+        d["data_source"]=next(iter(sources)) if len(sources)==1 else ("mixed" if sources else "")
         for p in PCTS: d["max_ms" if p==100 else f"p{str(p).replace('.','_')}_ms"]=percentile(lat,p)
         # Optional measured model/energy fields; blank rather than invented.
         mean_fields=("alpha","beta","predicted_ms","read_bw_gbps","write_bw_gbps","queue_ms","throughput_tps")
@@ -54,5 +56,5 @@ def aggregate(rows):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("input"); ap.add_argument("output"); a=ap.parse_args()
     rows=aggregate(load(a.input)); fields=list(rows[0])
-    with open(a.output,"w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
+    with open(a.output,"w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields,lineterminator="\n"); w.writeheader(); w.writerows(rows)
 if __name__=="__main__": main()

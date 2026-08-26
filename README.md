@@ -34,5 +34,6 @@ python3 code/make_figures.py
 python3 -m unittest discover -s code/tests -v
 ```
 
-`code/data/`에 포함된 값은 파이프라인 점검용 합성 데이터이며 논문의 실측
-결과로 인용해서는 안 됩니다. 출판 전 실제 측정 데이터로 교체해야 합니다.
+`code/data/`에 포함된 값은 실험 계획과 파이프라인 점검을 위한 합성 기대값이며
+논문의 실측 결과로 인용해서는 안 됩니다. 출판 전 실제 측정 데이터로 교체하고
+모든 synthetic provenance marker가 제거되었는지 검증해야 합니다.

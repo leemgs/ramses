@@ -1,2 +1,4 @@
-dataset,model,precision,n_items,baseline_accuracy,ramses_accuracy,baseline_auroc,ramses_auroc,output_equivalence
-mock_mvtec_ad,vit-h14,fp16,120,0.941667,0.941667,0.978421,0.978421,1.0
+dataset,model,precision,n_items,baseline_accuracy,ramses_accuracy,baseline_auroc,ramses_auroc,output_equivalence,data_source
+expected_mvtec_ad,vit-h14,fp16,1725,0.941,0.941,0.978,0.978,0.998,synthetic_expected_projection_not_measured
+expected_visa,vit-h14,fp16,1200,0.928,0.928,0.965,0.965,0.998,synthetic_expected_projection_not_measured
+expected_ai4i_2020,llama3-8b,fp16,2000,0.901,0.901,0.944,0.944,0.997,synthetic_expected_projection_not_measured

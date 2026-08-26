@@ -57,6 +57,12 @@ def write(path, lines):
     print(f"wrote {path} ({len(lines)} rows)")
 
 
+def projection_notice(rows, columns):
+    if any("synthetic" in r.get("data_source", "") for r in rows):
+        return [rf"\multicolumn{{{columns}}}{{c}}{{\textbf{{SYNTHETIC EXPECTATION---NOT MEASURED}}}}" + r" \\"]
+    return []
+
+
 def filt(rows, task, model):
     out = []
     for r in rows:
@@ -72,7 +78,7 @@ def table_percentiles(summary, task, model, outdir):
     rows = sys_sort(filt(summary, task, model))
     if not rows:
         return
-    body = []
+    body = projection_notice(rows, 6)
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -87,7 +93,7 @@ def table_energy(summary, task, model, outdir):
     rows = [r for r in rows if r.get("node_energy_j") not in ("", None)]
     if not rows:
         return
-    body = []
+    body = projection_notice(rows, 5)
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -104,7 +110,7 @@ def table_model_validation(summary, task, model, outdir):
     rows = [r for r in rows if r.get("predicted_ms") not in ("", None)]
     if not rows:
         return
-    body = []
+    body = projection_notice(rows, 6)
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -119,7 +125,7 @@ def table_policy_off(summary, task, model, outdir):
     rows = {r["system"]: r for r in filt(summary, task, model)}
     if "ramses" not in rows or "ramses_policy_off" not in rows:
         return
-    body = []
+    body = projection_notice(list(rows.values()), 4)
     for s in ("ramses", "ramses_policy_off"):
         r = rows[s]
         body.append(" & ".join([
@@ -135,7 +141,7 @@ def table_ci(stats, task, model, outdir):
     rows = sys_sort(filt(stats, task, model))
     if not rows:
         return
-    body = []
+    body = projection_notice(rows, 4)
     for r in rows:
         try:
             mean, lo, hi = float(r["mean"]), float(r["ci95_low"]), float(r["ci95_high"])
@@ -149,7 +155,7 @@ def table_ci(stats, task, model, outdir):
 def table_industrial(industrial, outdir):
     if not industrial:
         return
-    body = []
+    body = projection_notice(industrial, 7)
     for r in industrial:
         body.append(" & ".join([
             r.get("dataset", "--"), r.get("model", "--"),
@@ -167,7 +173,7 @@ def main():
     ap.add_argument("--industrial", default=os.path.join(DATA_DIR, "industrial_accuracy.csv"))
     ap.add_argument("--outdir", default=PAPER_TABLES)
     ap.add_argument("--task", default="ttft", help="filter task; empty for all")
-    ap.add_argument("--model", default="", help="filter model; empty for all")
+    ap.add_argument("--model", default="llama4-17b", help="filter model; empty for all")
     a = ap.parse_args()
 
     os.makedirs(a.outdir, exist_ok=True)

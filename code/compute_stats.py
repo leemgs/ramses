@@ -74,8 +74,12 @@ def summarize(rows, metric):
         sd = statistics.stdev(means) if n > 1 else 0.0
         half = t_crit(n - 1) * sd / math.sqrt(n) if n > 1 else 0.0
         d = dict(zip(GROUP, key))
+        matching = [r for r in rows if tuple(r[k] for k in GROUP) == key]
+        sources = {r.get("data_source", "") for r in matching if r.get("data_source")}
         d.update(metric=metric, runs=n, mean=mean, std=sd,
-                 ci95_low=mean - half, ci95_high=mean + half)
+                 ci95_low=mean - half, ci95_high=mean + half,
+                 data_source=next(iter(sources)) if len(sources) == 1
+                 else ("mixed" if sources else ""))
         out.append(d)
     return out
 
@@ -103,7 +107,7 @@ def main():
     rows = load(a.input, a.metric)
     summary = summarize(rows, a.metric)
     with open(a.output, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(summary[0]))
+        w = csv.DictWriter(f, fieldnames=list(summary[0]), lineterminator="\n")
         w.writeheader()
         w.writerows(summary)
     print(f"wrote {len(summary)} group rows to {a.output}")

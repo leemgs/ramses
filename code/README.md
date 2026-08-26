@@ -58,14 +58,16 @@ python3 code/eval_industrial.py --dataset mvtec_ad --data-root /path/to/mvtec \
         --out-csv code/data/industrial_accuracy.csv
 ```
 
-The `code/data/` directory includes a complete **synthetic mock-data set**
+The `code/data/` directory includes a complete **synthetic expected-data set**
 (`raw.jsonl`, `summary.csv`, `stats.csv`, `industrial_accuracy.csv`, and
 `sensitivity.csv`) so all four commands can be smoke-tested end to end. Every
-raw record carries `data_source=synthetic_mock_for_pipeline_testing_only`, and
-the mock industrial dataset name is `mock_mvtec_ad`. These values are test
-fixtures only: they are not measurements and must not be cited in the paper.
+raw record carries `data_source=synthetic_expected_projection_not_measured`,
+and projected industrial dataset names begin with `expected_`. These values are
+planning fixtures only: they are not measurements and must not be cited in the paper.
 Replace `raw.jsonl`, `industrial_accuracy.csv`, and `sensitivity.csv` with real
 measurements, then regenerate `summary.csv` and `stats.csv` before publication.
+See [`data/README.md`](data/README.md) for assumptions, regeneration, and the
+required measured-versus-expected comparison procedure.
 
 `make_tables.py` and `make_figures.py` emit output only for data present in the
 CSVs; absent metrics produce no rows or figures (never placeholder numbers).

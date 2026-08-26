@@ -8,8 +8,8 @@ If a required CSV is missing the corresponding table body is not generated, and
 the LaTeX wrapper's \\IfFileExists guard keeps the paper compilable.
 
 Usage:
-    python3 code/make_tables.py --summary code/data/summary.csv \
-        --stats code/data/stats.csv --outdir paper/tables \
+    python3 code/make_tables.py --summary code/data/actual/summary.csv \
+        --stats code/data/actual/stats.csv --outdir paper/tables \
         --task ttft --model llama4-17b
 
 Standard library only.
@@ -17,7 +17,7 @@ Standard library only.
 import argparse, csv, os
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(REPO_ROOT, "code", "data")
+DATA_DIR = os.path.join(REPO_ROOT, "code", "data", "actual")
 PAPER_TABLES = os.path.join(REPO_ROOT, "paper", "tables")
 
 # Display order and human labels for systems.
@@ -34,6 +34,11 @@ def read_csv(path):
         return None
     with open(path, newline="") as f:
         return list(csv.DictReader(f))
+
+
+def reject_projections(rows, label):
+    if rows and any("synthetic" in r.get("data_source", "") for r in rows):
+        raise SystemExit(f"refusing synthetic {label} input for publication output")
 
 
 def num(row, key, fmt="{:.1f}"):
@@ -57,12 +62,6 @@ def write(path, lines):
     print(f"wrote {path} ({len(lines)} rows)")
 
 
-def projection_notice(rows, columns):
-    if any("synthetic" in r.get("data_source", "") for r in rows):
-        return [rf"\multicolumn{{{columns}}}{{c}}{{\textbf{{SYNTHETIC EXPECTATION---NOT MEASURED}}}}" + r" \\"]
-    return []
-
-
 def filt(rows, task, model):
     out = []
     for r in rows:
@@ -78,7 +77,7 @@ def table_percentiles(summary, task, model, outdir):
     rows = sys_sort(filt(summary, task, model))
     if not rows:
         return
-    body = projection_notice(rows, 6)
+    body = []
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -93,7 +92,7 @@ def table_energy(summary, task, model, outdir):
     rows = [r for r in rows if r.get("node_energy_j") not in ("", None)]
     if not rows:
         return
-    body = projection_notice(rows, 5)
+    body = []
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -110,7 +109,7 @@ def table_model_validation(summary, task, model, outdir):
     rows = [r for r in rows if r.get("predicted_ms") not in ("", None)]
     if not rows:
         return
-    body = projection_notice(rows, 6)
+    body = []
     for r in rows:
         body.append(" & ".join([
             SYS_LABEL.get(r["system"], r["system"]),
@@ -125,7 +124,7 @@ def table_policy_off(summary, task, model, outdir):
     rows = {r["system"]: r for r in filt(summary, task, model)}
     if "ramses" not in rows or "ramses_policy_off" not in rows:
         return
-    body = projection_notice(list(rows.values()), 4)
+    body = []
     for s in ("ramses", "ramses_policy_off"):
         r = rows[s]
         body.append(" & ".join([
@@ -141,7 +140,7 @@ def table_ci(stats, task, model, outdir):
     rows = sys_sort(filt(stats, task, model))
     if not rows:
         return
-    body = projection_notice(rows, 4)
+    body = []
     for r in rows:
         try:
             mean, lo, hi = float(r["mean"]), float(r["ci95_low"]), float(r["ci95_high"])
@@ -155,7 +154,7 @@ def table_ci(stats, task, model, outdir):
 def table_industrial(industrial, outdir):
     if not industrial:
         return
-    body = projection_notice(industrial, 7)
+    body = []
     for r in industrial:
         body.append(" & ".join([
             r.get("dataset", "--"), r.get("model", "--"),
@@ -173,13 +172,16 @@ def main():
     ap.add_argument("--industrial", default=os.path.join(DATA_DIR, "industrial_accuracy.csv"))
     ap.add_argument("--outdir", default=PAPER_TABLES)
     ap.add_argument("--task", default="ttft", help="filter task; empty for all")
-    ap.add_argument("--model", default="llama4-17b", help="filter model; empty for all")
+    ap.add_argument("--model", default="", help="filter model; empty for all")
     a = ap.parse_args()
 
     os.makedirs(a.outdir, exist_ok=True)
     summary = read_csv(a.summary)
     stats = read_csv(a.stats)
     industrial = read_csv(a.industrial)
+    reject_projections(summary, "summary")
+    reject_projections(stats, "statistics")
+    reject_projections(industrial, "industrial")
     task = a.task or None
     model = a.model or None
     if summary is not None:

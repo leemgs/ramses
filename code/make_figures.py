@@ -15,8 +15,8 @@ Figures:
   4. sensitivity.png           -- p99 vs block size / controller parameter sweep.
 
 Usage:
-    python3 code/make_figures.py --summary code/data/summary.csv \
-        --stats code/data/stats.csv --sensitivity code/data/sensitivity.csv \
+    python3 code/make_figures.py --summary code/data/actual/summary.csv \
+        --stats code/data/actual/stats.csv --sensitivity code/data/actual/sensitivity.csv \
         --outdir paper/figures --task ttft
 
 Requires matplotlib and numpy in the author's environment.
@@ -24,7 +24,7 @@ Requires matplotlib and numpy in the author's environment.
 import argparse, csv, os
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(REPO_ROOT, "code", "data")
+DATA_DIR = os.path.join(REPO_ROOT, "code", "data", "actual")
 PAPER_FIGURES = os.path.join(REPO_ROOT, "paper", "figures")
 
 
@@ -33,6 +33,11 @@ def read_csv(path):
         return None
     with open(path, newline="") as f:
         return list(csv.DictReader(f))
+
+
+def reject_projections(rows, label):
+    if rows and any("synthetic" in r.get("data_source", "") for r in rows):
+        raise SystemExit(f"refusing synthetic {label} input for publication output")
 
 
 def fval(row, key):
@@ -52,13 +57,6 @@ def filt(rows, task, model):
             continue
         out.append(r)
     return out
-
-
-def mark_projection(ax, rows):
-    if any("synthetic" in r.get("data_source", "") for r in rows or []):
-        ax.text(0.5, 0.5, "SYNTHETIC EXPECTATION\\nNOT MEASURED",
-                transform=ax.transAxes, ha="center", va="center", rotation=25,
-                fontsize=12, color="crimson", alpha=0.24, weight="bold", zorder=10)
 
 
 def fig_energy_latency(summary, task, model, outdir, plt):
@@ -81,7 +79,6 @@ def fig_energy_latency(summary, task, model, outdir, plt):
         ax.plot(re, rl, "-o", color="#1b7837", label="RAMSES", zorder=3)
     ax.set_xlabel("Energy per request (J)")
     ax.set_ylabel("Median latency (ms)")
-    mark_projection(ax, rows)
     ax.legend(); fig.tight_layout()
     fig.savefig(os.path.join(outdir, "energy_latency.png"), dpi=200)
     print("wrote energy_latency.png")
@@ -102,7 +99,6 @@ def fig_phase(summary, task, model, outdir, plt):
         ax.annotate(s, (a, b), fontsize=6, xytext=(2, 2), textcoords="offset points")
     ax.set_xlabel(r"$\alpha = D / C_f$ (capacity pressure)")
     ax.set_ylabel(r"$\beta$ (transfer pressure)")
-    mark_projection(ax, rows)
     fig.tight_layout(); fig.savefig(os.path.join(outdir, "phase_measured.png"), dpi=200)
     print("wrote phase_measured.png")
 
@@ -145,7 +141,6 @@ def fig_consolidated(stats, outdir, plt):
     ax.set_xticks(x + width * (len(present) - 1) / 2)
     ax.set_xticklabels(systems, rotation=30, ha="right", fontsize=7)
     ax.set_ylabel("Normalized to Default (%)")
-    mark_projection(ax, stats)
     ax.legend(fontsize=7); fig.tight_layout()
     fig.savefig(os.path.join(outdir, "consolidated_results.png"), dpi=200)
     print("wrote consolidated_results.png")
@@ -172,7 +167,6 @@ def fig_sensitivity(sens, outdir, plt):
         xs, ys = zip(*pts)
         ax.plot(xs, ys, "-o", label=p)
     ax.set_xlabel("Parameter value"); ax.set_ylabel("p99 latency (ms)")
-    mark_projection(ax, sens)
     ax.legend(fontsize=7); fig.tight_layout()
     fig.savefig(os.path.join(outdir, "sensitivity.png"), dpi=200)
     print("wrote sensitivity.png")
@@ -185,7 +179,7 @@ def main():
     ap.add_argument("--sensitivity", default=os.path.join(DATA_DIR, "sensitivity.csv"))
     ap.add_argument("--outdir", default=PAPER_FIGURES)
     ap.add_argument("--task", default="ttft")
-    ap.add_argument("--model", default="llama4-17b")
+    ap.add_argument("--model", default="")
     a = ap.parse_args()
     try:
         import matplotlib
@@ -198,6 +192,9 @@ def main():
     summary = read_csv(a.summary)
     stats = read_csv(a.stats)
     sens = read_csv(a.sensitivity)
+    reject_projections(summary, "summary")
+    reject_projections(stats, "statistics")
+    reject_projections(sens, "sensitivity")
     task = a.task or None
     model = a.model or None
     if summary:
@@ -205,7 +202,7 @@ def main():
         fig_phase(summary, task, model, a.outdir, plt)
     else:
         print("no summary.csv: energy/phase figures skipped")
-    fig_consolidated(filt(stats, task, model), a.outdir, plt)
+    fig_consolidated(stats, a.outdir, plt)
     fig_sensitivity(sens, a.outdir, plt)
 
 

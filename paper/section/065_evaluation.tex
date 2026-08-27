@@ -1,8 +1,36 @@
 \section{Evaluation}\label{sec:results}
 
 This section reports a quantitative evaluation of \textbf{RAMSES} relative to existing approaches.
-Every experiment is run five times under the same hardware setup, and tables report the mean $\pm$ standard deviation over those five independent runs.
+Every experiment is run five times under the same hardware setup. Tables report
+absolute request-level percentiles and run-level means with 95\% confidence
+intervals; standard deviations remain available in the artifact.
 Raw per-run observations, the request-level logs, and the analysis scripts that compute confidence intervals and significance tests are provided in the review artifact so that every summary in this section can be recomputed from primary data.
+
+\subsection{Research Questions and Claim--Evidence Alignment}
+We organize the evaluation around four questions tied directly to the
+contributions in Section~\ref{sec:introduction}:
+\begin{description}
+\item[RQ1: Predictive validity.] Do measured pressure ratios distinguish the
+three regimes, and how accurately does the latency model predict held-out
+request latency? We report operating-point coverage, MAE/RMSE, and residuals.
+\item[RQ2: Value of switching.] Does measured-state switching add value beyond
+the same preallocation, NUMA, and transfer mechanisms at fixed settings? The
+same-trace \texttt{ramses\_policy\_off} run is the counterfactual, and parameter
+sweeps test dependence on a single chosen threshold.
+\item[RQ3: Benefit boundary.] Where does RAMSES improve latency, memory,
+failures, and GPU energy, and where does its overhead cease to pay? We retain
+non-gains and report absolute P50--P99.9 latency and failure denominators.
+\item[RQ4: Semantic preservation.] Does relocation preserve model outputs and
+named-task accuracy? Baseline/RAMSES outputs are paired on identical inputs; no
+accuracy value is inferred from a latency experiment.
+\end{description}
+
+Synthetic values under \texttt{code/data/expected/} are pre-experiment
+hypotheses used only to size the matrix and exercise the pipeline. They are
+excluded from every paper table, figure, statistical test, and claim. A result
+enters this section only when request-level measurement provenance exists under
+\texttt{code/data/actual/}; unsupported configurations remain explicitly
+missing rather than being filled from an expectation.
 
 \noindent\textbf{Testbed.}
 Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
@@ -241,6 +269,13 @@ optimization rather than a model change, task accuracy matches the baseline
 while latency, VRAM, and energy improve. Table~\ref{tab:industrial_accuracy}
 summarizes the dataset, model, accuracy, and equivalence results, and the
 evaluation harness is released as \texttt{../code/eval\_industrial.py}.
+
+The task result is logically separate from the synthetic arrival-trace study:
+the former tests semantic preservation on named dataset items, whereas the
+latter stresses resource coordination. Dataset version, official split,
+preprocessing, sample count, precision, tolerance, and failed-item denominator
+must accompany each populated row. If those provenance fields or measured
+outputs are absent, the row is omitted and no preservation claim is made.
 
 \input{tables/industrial_accuracy.tex}
 

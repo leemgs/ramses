@@ -17,6 +17,23 @@ RAMSES is, in this sense, the regime view made operational.
 It treats VRAM, DRAM, and NVMe as one hierarchy and ties the gains we measured back to the four-term latency decomposition (compute, locality, transfer, synchronization).
 For deployment, RAMSES drops into PyTorch-based stacks via \texttt{LD\_PRELOAD} and configuration files---no application changes required---and can also be packaged as a lightweight container or sidecar~\cite{swapAdvisor2020,kwon2023pagedattention}.
 
+\subsection{What the Evidence Contributes}
+Preallocation, NUMA placement, asynchronous I/O, and eviction are not claimed
+as new in isolation. The research contribution is the explicit connection
+between observable dimensionless pressures, a reproducible regime-to-action
+mapping, and a counterfactual evaluation that seeks both positive and negative
+operating regions. A faster implementation alone would establish an engineering
+point result; agreement among the predicted boundary, policy-off ablation, and
+measured response instead supports an explanation of when coordination is
+worthwhile.
+
+That explanation is the transferable artifact. A new device, model, or storage
+tier need not inherit our numerical thresholds: it can measure its own capacity
+and transfer terms, locate its operating point, and test the same boundary
+prediction. Conversely, failure to reproduce the predicted ordering, or a
+benefit in a supposedly capacity- or bandwidth-limited region, would falsify
+the regime account rather than being dismissed as a tuning problem.
+
 \subsection{Generality and Energy Implications}
 The experiments here are on LLM and vision-model inference, but regime-dependent behavior is a general property of multi-tier memory.
 Anywhere working sets exceed fast-tier capacity and execution depends on cross-tier movement plus synchronization, the same regime transitions appear.

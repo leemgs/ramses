@@ -5,12 +5,33 @@ This issue matters for industrial analytics such as inspection, predictive maint
 
 Prior systems optimize paging, GPU--CPU offload, or request scheduling. RAMSES instead coordinates the VRAM--DRAM--NVMe path within one node while observing occupancy separately from actual bidirectional traffic. The design uses a lightweight state machine to choose admission, prefetch, and eviction actions rather than treating an analytical boundary as a guarantee.
 
+The central research question is not whether another offload implementation can
+reduce memory use, but \emph{when coordination across all three tiers changes
+end-to-end behavior and when physical limits make that coordination
+ineffective}. We answer it through a model--mechanism--evidence chain: the model
+identifies an operating regime, the controller changes a named set of actions,
+and the evaluation tests both the benefit and its predicted boundary.
+
 The contributions are:
 \begin{itemize}
-\item \emph{An overlap-aware operating model} that separates workload demand, cache/prefetch reuse, bidirectional transfer volume, fixed and queueing delays, effective bandwidth, and synchronization. Its pressure ratios classify measured operating points without circular thresholds or convexity and stability claims.
-\item \emph{A specified controller} with a 200~ms sampling interval, 5\% hysteresis, three-sample switching rule, explicit actions in every state, admission control, and $O(\log n)$ candidate maintenance.
-\item \emph{A single-node implementation} that combines GPU resource preallocation, NUMA-local host allocation, and an asynchronous block-aligned transfer policy in one control loop, integrated into unmodified PyTorch serving stacks through an \texttt{LD\_PRELOAD} interception layer. Multi-node fabrics and a hardened GPUDirect Storage path are outside the present single-node scope.
-\item \emph{Reproducible empirical evaluation} against memory-serving baselines, reporting up to 60\% lower load time, 35\% lower latency, 15\% lower peak VRAM, and 18.5\% higher GPU throughput per watt. The 72-hour workload is explicitly identified as a parameterized synthetic trace, and its generator is included with the review artifact.
+\item \emph{A falsifiable operating model.} The model separates resident demand
+from actual bidirectional traffic and accounts for overlap, queueing, reuse, and
+synchronization. Two dimensionless pressures predict a coordination-sensitive
+region and capacity- and bandwidth-limited regions where RAMSES should provide
+little or negative benefit.
+\item \emph{A regime-to-action controller.} RAMSES maps those observable
+pressures to admission, prefetch, and eviction actions using a specified
+200~ms sampling interval, 5\% hysteresis, and three-sample switching rule. This
+mapping, rather than its component mechanisms in isolation, is tested by the
+policy-off ablation.
+\item \emph{A deployable single-node realization.} GPU preallocation, NUMA-local
+host allocation, and asynchronous block-aligned transfer are combined behind
+an \texttt{LD\_PRELOAD} layer for unmodified PyTorch applications. We do not
+claim a hardened GPUDirect Storage or multi-node data path.
+\item \emph{Boundary-seeking empirical evidence.} The evaluation crosses models
+and pressure regimes, includes a controller-disabled counterfactual and
+parameter sweeps, and reports absolute tails, uncertainty, failures, and GPU
+energy. Reported maxima are configuration-specific effects, not guarantees.
 \end{itemize}
 
 The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.

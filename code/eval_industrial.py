@@ -82,35 +82,55 @@ def output_equivalence(base_outputs, ramses_outputs, precision):
 
 
 # --------------------------------------------------------------------------
-# Author integration hooks (wire to your environment)
+# Backend dispatch. A backend module (e.g., mvtec_vit) supplies load_dataset()
+# and run_model(); pass --backend to use it. Without one, the hooks explain how
+# to wire your own.
 # --------------------------------------------------------------------------
+_BACKEND = None
+
+
+def set_backend(module_name):
+    global _BACKEND
+    if module_name:
+        import importlib
+        _BACKEND = importlib.import_module(module_name)
+
+
 def load_dataset(name, data_root):
     """Return list of (item_id, image_path, label) for the named dataset.
 
-    MVTec AD: label 1 for defective ('anomaly'), 0 for 'good'. Use the official
-    test split. VisA is analogous. Replace the body with your loader.
+    MVTec AD: label 1 for defective ('anomaly'), 0 for 'good'; official test
+    split. Delegates to the --backend module when one is set (see mvtec_vit.py).
     """
+    if _BACKEND:
+        return _BACKEND.load_dataset(name, data_root)
     raise NotImplementedError(
-        f"Wire load_dataset('{name}', '{data_root}') to your dataset loader. "
-        "Return [(item_id, image_path, label), ...] from the official test split.")
+        f"No backend set. Pass --backend mvtec_vit, or wire load_dataset("
+        f"'{name}', '{data_root}') to return [(item_id, path, label), ...].")
 
 
 def run_model(items, model_name, precision, serving_mode):
-    """Run inference under a serving mode and return (scores, outputs, latencies).
+    """Run inference under a serving mode and return
+    (scores, preds, outputs, latencies).
 
-    Args:
-      items: list of (item_id, image_path, label)
-      serving_mode: 'baseline' (unmodified PyTorch) or 'ramses' (LD_PRELOAD layer)
-    Returns:
-      scores    : list[float]  per-item positive-class score (for AUROC)
-      preds     : list[int]    per-item predicted label (for accuracy)
-      outputs   : list[list[float]] per-item raw logits (for equivalence)
-      latencies : list[float]  per-item latency in ms
-    Wire this to your ViT-H/14 (or LLM) + serving backend.
+    serving_mode: 'baseline' (unmodified PyTorch) or 'ramses' (LD_PRELOAD layer).
+    Because the LD_PRELOAD layer is process-global, the two modes are normally
+    run as two separate processes (see --mode single and --compare); the
+    in-process 'both' path suits a Python-API backend. Delegates to --backend.
     """
+    if _BACKEND:
+        return _BACKEND.run_model(items, model_name, precision, serving_mode)
     raise NotImplementedError(
-        f"Wire run_model(model='{model_name}', precision='{precision}', "
-        f"serving_mode='{serving_mode}') to your inference + serving backend.")
+        f"No backend set. Pass --backend mvtec_vit, or wire run_model("
+        f"model='{model_name}', serving_mode='{serving_mode}').")
+
+
+def save_outputs(path, items, scores, preds, outputs, labels):
+    import json as _json
+    with open(path, "w") as f:
+        _json.dump({"item_ids": [i for i, _p, _l in items], "labels": labels,
+                    "scores": scores, "preds": preds, "outputs": outputs}, f)
+    print(f"wrote per-item outputs to {path}")
 
 
 # --------------------------------------------------------------------------
@@ -136,42 +156,81 @@ def write_accuracy_csv(path, rows):
     print(f"wrote {path}")
 
 
+def accuracy_row(dataset, model, precision, labels, b, r):
+    b_scores, b_preds, b_out = b
+    r_scores, r_preds, r_out = r
+    return {
+        "dataset": dataset, "model": model, "precision": precision,
+        "n_items": len(labels),
+        "baseline_accuracy": accuracy(labels, b_preds),
+        "ramses_accuracy": accuracy(labels, r_preds),
+        "baseline_auroc": auroc(labels, b_scores),
+        "ramses_auroc": auroc(labels, r_scores),
+        "output_equivalence": output_equivalence(b_out, r_out, precision),
+    }
+
+
 # --------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", default="mvtec_ad")
-    ap.add_argument("--data-root", required=True)
+    ap.add_argument("--data-root")
     ap.add_argument("--model", default="vit-h14")
     ap.add_argument("--precision", default="fp16")
     ap.add_argument("--run-id", default="r1")
+    ap.add_argument("--backend", default="", help="backend module, e.g. mvtec_vit")
+    ap.add_argument("--mode", choices=["both", "single"], default="both",
+                    help="'both' runs baseline+ramses in one process (Python-API "
+                         "backend); 'single' runs one serving mode (LD_PRELOAD).")
+    ap.add_argument("--serving-mode", choices=["baseline", "ramses"], default="baseline")
+    ap.add_argument("--outputs-file", default="", help="single-mode: persist per-item outputs here")
+    ap.add_argument("--compare", nargs=2, metavar=("BASELINE_JSON", "RAMSES_JSON"),
+                    help="compute accuracy + output equivalence from two saved runs")
     ap.add_argument("--out-jsonl", default="industrial.jsonl")
     ap.add_argument("--out-csv", default="industrial_accuracy.csv")
     a = ap.parse_args()
+    set_backend(a.backend)
 
+    # Cross-process comparison of two persisted single-mode runs.
+    if a.compare:
+        import json as _json
+        base = _json.load(open(a.compare[0]))
+        rams = _json.load(open(a.compare[1]))
+        labels = base["labels"]
+        row = accuracy_row(a.dataset, a.model, a.precision, labels,
+                           (base["scores"], base["preds"], base["outputs"]),
+                           (rams["scores"], rams["preds"], rams["outputs"]))
+        write_accuracy_csv(a.out_csv, [row])
+        print(row)
+        return
+
+    if not a.data_root:
+        ap.error("--data-root is required unless --compare is used")
     items = load_dataset(a.dataset, a.data_root)
     labels = [lab for _id, _p, lab in items]
+
+    if a.mode == "single":
+        t0 = time.time()
+        scores, preds, outputs, lat = run_model(items, a.model, a.precision, a.serving_mode)
+        write_jsonl(a.out_jsonl, a.model, a.precision, a.serving_mode, items, lat, a.run_id)
+        out_file = a.outputs_file or f"outputs_{a.serving_mode}.json"
+        save_outputs(out_file, items, scores, preds, outputs, labels)
+        print(f"{a.serving_mode}: {len(items)} items in {time.time()-t0:.1f}s. "
+              f"Run the other mode, then: --compare <baseline.json> <ramses.json>")
+        return
 
     results = {}
     for mode in ("baseline", "ramses"):
         t0 = time.time()
         scores, preds, outputs, lat = run_model(items, a.model, a.precision, mode)
-        results[mode] = (scores, preds, outputs, lat)
+        results[mode] = (scores, preds, outputs)
         write_jsonl(a.out_jsonl, a.model, a.precision, mode, items, lat, a.run_id)
         print(f"{mode}: {len(items)} items in {time.time()-t0:.1f}s")
 
-    b_scores, b_preds, b_out, _ = results["baseline"]
-    r_scores, r_preds, r_out, _ = results["ramses"]
-    rows = [{
-        "dataset": a.dataset, "model": a.model, "precision": a.precision,
-        "n_items": len(items),
-        "baseline_accuracy": accuracy(labels, b_preds),
-        "ramses_accuracy": accuracy(labels, r_preds),
-        "baseline_auroc": auroc(labels, b_scores),
-        "ramses_auroc": auroc(labels, r_scores),
-        "output_equivalence": output_equivalence(b_out, r_out, a.precision),
-    }]
-    write_accuracy_csv(a.out_csv, rows)
-    print(rows[0])
+    row = accuracy_row(a.dataset, a.model, a.precision, labels,
+                       results["baseline"], results["ramses"])
+    write_accuracy_csv(a.out_csv, [row])
+    print(row)
 
 
 if __name__ == "__main__":

@@ -56,14 +56,18 @@ MAE/RMSE·에너지 집계), `compute_stats.py`(평균·표준편차·95% CI·�
 ```
 
 ### B2. 전체 노드 에너지 측정 (R3-11 — 가장 중요)
-GPU-only NVML만으로는 부족합니다. 동일 monotonic 클록으로 다음을 합산:
-- **GPU**: NVML `nvmlDeviceGetTotalEnergyConsumption` (또는 power×dt 적분).
-- **CPU+DRAM**: Intel RAPL `/sys/class/powercap/intel-rapl:0/energy_uj`
-  (package)와 `intel-rapl:0:0`(DRAM subdomain)을 시작/종료에 읽어 차분.
-- **NVMe**: 드라이브 전력(가능하면 PDU 분해) 또는 실측 전력 모델.
+GPU-only NVML만으로는 부족합니다. **`code/collect_energy.py`** 가 동일 monotonic
+클록으로 GPU(NVML)+CPU package/DRAM(RAPL)을 적분하고 카운터 wrap과 idle 차감을
+처리해 `gpu_energy_j`/`node_energy_j`를 산출합니다.
+```sh
+python3 code/collect_energy.py --idle-seconds 5 --out energy.json -- \
+        python run_inference.py --system ramses ...
+```
+- **NVMe**: 드라이브 전력(가능하면 PDU 분해) 또는 실측 전력 모델을 컴포넌트에 추가.
 - **(권장) 랙 PDU**: Yokogawa WT310E 등으로 절대 whole-node 확인.
-각 run에 instrument model, sampling rate, clock alignment, idle-subtraction,
-calibration uncertainty, dropped-sample count을 함께 기록(스키마 상 별도 메모/사이드카).
+- 산출된 `node_energy_j`/`gpu_energy_j`를 각 JSONL 레코드(`data/actual/`)에 기록하면
+  `analyze_results.py`가 J/req·J/token·EDP를 자동 계산합니다.
+- RAPL/NVML이 없으면 조작 대신 unavailable로 정직 표기합니다.
 
 ### B3. 파이프라인 실행
 ```sh
@@ -127,6 +131,24 @@ hardware/software-in-the-loop.
 - 데이터셋 공식 split·metric 사용(예: MVTec AD는 image-level AUROC).
 - 각 태스크에 dataset 버전, 샘플 수, 프롬프트/전처리, precision, expert/tensor
   placement, concurrency, request mix를 명시.
+
+### C2-bis. 바로 실행 가능한 백엔드 (`code/mvtec_vit.py`)
+`code/mvtec_vit.py` 가 MVTec AD 로더 + ViT(deep-feature-distance) 이상탐지를
+구현합니다. LD_PRELOAD는 프로세스 전역이므로 **모드별 별도 프로세스 → compare**로
+정확도·출력동등성을 산출합니다:
+```sh
+MVTEC_CATEGORY=bottle python3 code/eval_industrial.py --backend mvtec_vit \
+    --data-root /path/to/mvtec --mode single --serving-mode baseline \
+    --outputs-file out_baseline.json
+LD_PRELOAD=/path/to/ramses.so MVTEC_CATEGORY=bottle \
+    python3 code/eval_industrial.py --backend mvtec_vit \
+    --data-root /path/to/mvtec --mode single --serving-mode ramses \
+    --outputs-file out_ramses.json
+python3 code/eval_industrial.py --compare out_baseline.json out_ramses.json \
+    --out-csv code/data/actual/industrial_accuracy.csv
+```
+그런 다음 `make_tables.py --industrial code/data/actual/industrial_accuracy.csv`로
+`paper/tables/industrial_body.tex`를 생성하면 Table가 채워집니다.
 
 ### C3. 출력 동등성(가장 방어적인 "정확도" 논거)
 RAMSES는 서빙 최적화이지 모델 변경이 아니므로, **동일 입력에 대해 baseline과

@@ -70,9 +70,45 @@ is marked `synthetic_expected_projection_not_measured`.
 
 `make_tables.py` and `make_figures.py` emit output only for data present in the
 CSVs; absent metrics produce no rows or figures (never placeholder numbers).
-`eval_industrial.py` ships complete metric/equivalence/output machinery; wire
-its `load_dataset()` and `run_model()` hooks to your dataset and serving
-backend.
+
+## Whole-node energy (R3-11)
+
+`collect_energy.py` integrates GPU (NVML) and CPU package + DRAM (Intel RAPL)
+energy over the same monotonic window, handles counter wrap, and supports idle
+subtraction. It writes `gpu_energy_j` and `node_energy_j` (plus a per-component
+breakdown and instrument metadata) that drop straight into the measurement
+schema. On a host without RAPL/NVML it reports energy as unavailable rather than
+guessing.
+
+```sh
+python3 code/collect_energy.py --idle-seconds 5 --out energy.json -- \
+        python run_inference.py --system ramses ...
+```
+
+## Named industrial task (R3-8)
+
+`eval_industrial.py` computes task accuracy/AUROC and baseline-vs-RAMSES output
+equivalence; `mvtec_vit.py` is a concrete MVTec AD + ViT backend (deep-feature-
+distance anomaly detection; embeddings returned for the equivalence check).
+Because the RAMSES `LD_PRELOAD` layer is process-global, run each serving mode in
+its own process and compare:
+
+```sh
+MVTEC_CATEGORY=bottle python3 code/eval_industrial.py --backend mvtec_vit \
+    --data-root /path/to/mvtec --mode single --serving-mode baseline \
+    --outputs-file out_baseline.json
+LD_PRELOAD=/path/to/ramses.so MVTEC_CATEGORY=bottle \
+    python3 code/eval_industrial.py --backend mvtec_vit \
+    --data-root /path/to/mvtec --mode single --serving-mode ramses \
+    --outputs-file out_ramses.json
+python3 code/eval_industrial.py --compare out_baseline.json out_ramses.json \
+    --out-csv code/data/actual/industrial_accuracy.csv
+```
+
+The dataset scanning, scoring, energy integration, and metric math are unit
+tested (`python3 -m unittest discover -s code/tests`); the ViT embedder and
+serving hooks run in the author's GPU environment. Real outputs belong in
+`data/actual/`, never in `data/expected/`.
 
 A publishable run requires CUDA-capable hardware, NUMA/NVMe tools, the RAMSES runtime, baseline ports, and a synchronized whole-node power meter. The preflight script fails when these prerequisites are absent.
 

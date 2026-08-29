@@ -17,7 +17,7 @@ that introduced the measured bundle used by the manuscript.
 | NEO | MLSys'25 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
 | SpecOffload | arXiv'25 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
 | vLLM | 0.5.3 | unavailable in archived records | Llama-4 compatibility patch (not present in this repository) | patched | cold + warm | same budget |
-| RAMSES | LD_PRELOAD orchestrator (artifact) | git `12df269b883bb2c32db303bf83cf46ab5315a595` | interception layer (implementation not present in this repository) | FP16/FP32 | cold + warm | same budget |
+| RAMSES | LD_PRELOAD orchestrator (artifact) | git `e133cfc0fda068a309576bef8e0f21b75e0fa288` | interception layer (implementation not present in this repository) | FP16/FP32 | cold + warm | same budget |
 
 The unavailable fields remain an R3-9 reproducibility limitation. They require
 the authors' original evaluation images or run inventory and cannot be recovered

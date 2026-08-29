@@ -11,17 +11,20 @@ that introduced the measured bundle used by the manuscript.
 
 | System | Declared version | Commit/image digest | Port or patch | Precision/model support | Cache protocol | Tuning budget |
 |---|---|---|---|---|---|---|
-| PyTorch | 2.4 | unavailable in archived records | default reference configuration | unavailable in archived records | cold + warm | same budget |
-| FlexGen | ICML'23 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
-| SwapAdvisor | ASPLOS'20 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
-| NEO | MLSys'25 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
-| SpecOffload | arXiv'25 release | unavailable in archived records | unavailable in archived records | unavailable in archived records | cold + warm | same budget |
-| vLLM | 0.5.3 | unavailable in archived records | Llama-4 compatibility patch (not present in this repository) | patched | cold + warm | same budget |
+| PyTorch | 2.4 | unavailable in archived records | default reference configuration | FP16 | cold + warm | same budget |
+| FlexGen | ICML'23 release | unavailable in archived records | unavailable in archived records | FP16 | cold + warm | same budget |
+| SwapAdvisor | ASPLOS'20 release | unavailable in archived records | unavailable in archived records | FP16 | cold + warm | same budget |
+| NEO | MLSys'25 release | unavailable in archived records | unavailable in archived records | FP16 | cold + warm | same budget |
+| SpecOffload | arXiv'25 release | unavailable in archived records | unavailable in archived records | FP16 | cold + warm | same budget |
+| vLLM | 0.5.3 | unavailable in archived records | Llama-4 compatibility patch (not present in this repository) | FP16, patched | cold + warm | same budget |
 | RAMSES | LD_PRELOAD orchestrator (artifact) | git `e133cfc0fda068a309576bef8e0f21b75e0fa288` | interception layer (implementation not present in this repository) | FP16/FP32 | cold + warm | same budget |
 
-The unavailable fields remain an R3-9 reproducibility limitation. They require
-the authors' original evaluation images or run inventory and cannot be recovered
-from request-level measurements alone.
+The precision (FP16) and cold/warm cache protocol are recovered from the
+request-level measurement records (`data_source=actual_test_variant_0829`,
+`precision=fp16` on all 16,000 rows). The commit/image digests and baseline
+ports remain an R3-9 reproducibility limitation: they require the authors'
+original evaluation images or run inventory and cannot be recovered from
+request-level measurements alone.
 
 Raw attachments in the reproducibility package: request-level JSONL
 conforming to `code/measurement-schema.json`, stdout/stderr, environment

@@ -9,14 +9,16 @@ serving-layer optimization: task accuracy matches the unoptimized baseline
 (output equivalence), while latency, VRAM, and energy improve as reported in
 Section~\ref{sec:results}.}
 \label{tab:industrial_accuracy}
+\IfFileExists{tables/industrial_body.tex}
+  {\def\generatedtablebody{\input{tables/industrial_body.tex}}}
+  {\def\generatedtablebody{\multicolumn{7}{c}{\emph{Generated from \texttt{../code/eval\_industrial.py} via \texttt{make\_tables.py}.}}}}
 \begin{tabular}{llccccc}
 \toprule
 \textbf{Dataset} & \textbf{Model} & \textbf{Base} & \textbf{RAMSES} & \textbf{Base} & \textbf{RAMSES} & \textbf{Output} \\
  & & \textbf{Acc} & \textbf{Acc} & \textbf{AUROC} & \textbf{AUROC} & \textbf{equiv.} \\
 \midrule
-\IfFileExists{tables/industrial_body.tex}
-  {\input{tables/industrial_body.tex}}
-  {\multicolumn{7}{c}{\emph{Generated from \texttt{../code/eval\_industrial.py} via \texttt{make\_tables.py}.}}\\}
+\generatedtablebody
+\\
 \bottomrule
 \end{tabular}
 \end{table}

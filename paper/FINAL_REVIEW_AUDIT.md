@@ -56,6 +56,9 @@ reported numbers must trace to the raw runs placed in `../code/data/`.
 
 ## Build note
 
-No LaTeX toolchain is available in this environment, so the PDF was not
-recompiled here. A clean `pdflatex → bibtex → pdflatex ×2` build and a visual
-pass over all mathematics and figures should be run before upload.
+On 2026-08-29, the paper was cleaned and rebuilt with
+`pdflatex → bibtex → pdflatex ×2`. The resulting 13-page PDF was rendered to
+page images and visually checked page by page: equations, plots, diagrams, and
+generated tables are present and legible, with no clipping observed. The final
+pass has no undefined references or citations. Its remaining diagnostics are
+non-fatal IEEEtran/font and box-spacing warnings.

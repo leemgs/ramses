@@ -7,14 +7,16 @@
 that retains all three data-plane modules but disables regime switching, run on
 the same trace and seed. \capinfo}
 \label{tab:policy_off}
+\IfFileExists{tables/policy_off_body.tex}
+  {\def\generatedtablebody{\input{tables/policy_off_body.tex}}}
+  {\def\generatedtablebody{\multicolumn{4}{c}{\emph{Generated from paired runs via \texttt{../code/make\_tables.py}.}}}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Configuration} & \textbf{P99} & \textbf{P99.9} & \textbf{Energy/req} \\
  & (ms) & (ms) & (J) \\
 \midrule
-\IfFileExists{tables/policy_off_body.tex}
-  {\input{tables/policy_off_body.tex}}
-  {\multicolumn{4}{c}{\emph{Generated from paired runs via \texttt{../code/make\_tables.py}.}}\\}
+\generatedtablebody
+\\
 \bottomrule
 \end{tabular}
 \end{table}

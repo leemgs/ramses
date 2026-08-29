@@ -7,13 +7,15 @@
 requests each) on the Llama-4 17B workload. RAMSES reduces mean load time by
 59.9\% and peak VRAM by 15.1\% relative to PyTorch. \capinfo}
 \label{tab:loadtime_vram}
+\IfFileExists{tables/loadtime_vram_body.tex}
+  {\def\generatedtablebody{\input{tables/loadtime_vram_body.tex}}}
+  {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from raw measurements via \texttt{code/make\_tables.py}.}}}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{System} & \textbf{Load-time (s)} & \textbf{Peak VRAM (GB)} \\
 \midrule
-\IfFileExists{tables/loadtime_vram_body.tex}
-  {\input{tables/loadtime_vram_body.tex}}
-  {\multicolumn{3}{c}{\emph{Generated from raw measurements via \texttt{code/make\_tables.py}.}}\\}
+\generatedtablebody
+\\
 \bottomrule
 \end{tabular}
 \end{table}

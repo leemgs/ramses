@@ -7,13 +7,15 @@
 trace: per-minute metrics summarized over 4{,}320 records per system. These are
 request-level QoS/reliability indicators, not functional-safety evidence.}
 \label{tab:qos}
+\IfFileExists{tables/qos_body.tex}
+  {\def\generatedtablebody{\input{tables/qos_body.tex}}}
+  {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from the 72-hour series via \texttt{code/make\_tables.py}.}}}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Default} & \textbf{RAMSES} \\
 \midrule
-\IfFileExists{tables/qos_body.tex}
-  {\input{tables/qos_body.tex}}
-  {\multicolumn{3}{c}{\emph{Generated from the 72-hour series via \texttt{code/make\_tables.py}.}}\\}
+\generatedtablebody
+\\
 \bottomrule
 \end{tabular}
 \end{table}

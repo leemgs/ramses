@@ -6,14 +6,16 @@
 \caption{Whole-node energy per request and per token, energy--delay product
 (EDP), and throughput from synchronized CPU/DRAM/NVMe/GPU integration. \capinfo}
 \label{tab:energy}
+\IfFileExists{tables/energy_body.tex}
+  {\def\generatedtablebody{\input{tables/energy_body.tex}}}
+  {\def\generatedtablebody{\multicolumn{5}{c}{\emph{Generated from whole-node power logs via \texttt{../code/make\_tables.py}.}}}}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{System} & \textbf{Energy/req} & \textbf{Energy/token} & \textbf{EDP} & \textbf{Throughput} \\
  & (J) & (J) & (J$\cdot$ms) & (tok/s) \\
 \midrule
-\IfFileExists{tables/energy_body.tex}
-  {\input{tables/energy_body.tex}}
-  {\multicolumn{5}{c}{\emph{Generated from whole-node power logs via \texttt{../code/make\_tables.py}.}}\\}
+\generatedtablebody
+\\
 \bottomrule
 \end{tabular}
 \end{table}

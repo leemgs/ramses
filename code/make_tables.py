@@ -51,6 +51,14 @@ def num(row, key, fmt="{:.1f}"):
         return str(v)
 
 
+def latex_text(value):
+    """Escape CSV text used in ordinary LaTeX table cells."""
+    return str(value).replace("\\", r"\textbackslash{}") \
+        .replace("&", r"\&").replace("%", r"\%").replace("$", r"\$") \
+        .replace("#", r"\#").replace("_", r"\_").replace("{", r"\{") \
+        .replace("}", r"\}")
+
+
 def sys_sort(rows):
     idx = {s: i for i, s in enumerate(SYS_ORDER)}
     return sorted(rows, key=lambda r: idx.get(r.get("system"), 99))
@@ -60,6 +68,18 @@ def write(path, lines):
     with open(path, "w") as f:
         f.write("\n".join(lines) + "\n")
     print(f"wrote {path} ({len(lines)} rows)")
+
+
+def write_table_body(path, lines):
+    """Write rows with the final row terminator supplied by the wrapper.
+
+    Keeping the last ``\\\\`` outside ``\\input`` lets a following booktabs
+    rule remain adjacent to the row terminator, as TeX requires.
+    """
+    if lines:
+        assert lines[-1].endswith(r" \\")
+        lines[-1] = lines[-1][:-3]
+    write(path, lines)
 
 
 def filt(rows, task, model):
@@ -84,7 +104,7 @@ def table_percentiles(summary, task, model, outdir):
             num(r, "p50_ms"), num(r, "p95_ms"), num(r, "p99_ms"),
             num(r, "p99_9_ms"), num(r, "max_ms"),
         ]) + r" \\")
-    write(os.path.join(outdir, "latency_percentiles_body.tex"), body)
+    write_table_body(os.path.join(outdir, "latency_percentiles_body.tex"), body)
 
 
 def table_energy(summary, task, model, outdir):
@@ -101,7 +121,7 @@ def table_energy(summary, task, model, outdir):
             num(r, "edp_j_ms", "{:.1f}"),
             num(r, "throughput_tps", "{:.2f}"),
         ]) + r" \\")
-    write(os.path.join(outdir, "energy_body.tex"), body)
+    write_table_body(os.path.join(outdir, "energy_body.tex"), body)
 
 
 def table_model_validation(summary, task, model, outdir):
@@ -117,7 +137,7 @@ def table_model_validation(summary, task, model, outdir):
             num(r, "mae_ms", "{:.1f}"), num(r, "rmse_ms", "{:.1f}"),
             num(r, "prefetch_hit_rate", "{:.2f}"),
         ]) + r" \\")
-    write(os.path.join(outdir, "model_validation_body.tex"), body)
+    write_table_body(os.path.join(outdir, "model_validation_body.tex"), body)
 
 
 def table_policy_off(summary, task, model, outdir):
@@ -131,7 +151,7 @@ def table_policy_off(summary, task, model, outdir):
             SYS_LABEL[s], num(r, "p99_ms"), num(r, "p99_9_ms"),
             num(r, "energy_per_request_j", "{:.2f}"),
         ]) + r" \\")
-    write(os.path.join(outdir, "policy_off_body.tex"), body)
+    write_table_body(os.path.join(outdir, "policy_off_body.tex"), body)
 
 
 def table_ci(stats, task, model, outdir):
@@ -161,7 +181,7 @@ def table_loadtime_vram(rows, outdir):
             num(r, "load_time_s_mean", "{:.1f}"),
             num(r, "peak_vram_gb_mean", "{:.1f}"),
         ]) + r" \\")
-    write(os.path.join(outdir, "loadtime_vram_body.tex"), body)
+    write_table_body(os.path.join(outdir, "loadtime_vram_body.tex"), body)
 
 
 QOS_ROWS = [
@@ -185,7 +205,7 @@ def table_qos(qos, outdir):
         if not r:
             continue
         body.append(" & ".join([label, num(r, "default", fmt), num(r, "ramses", fmt)]) + r" \\")
-    write(os.path.join(outdir, "qos_body.tex"), body)
+    write_table_body(os.path.join(outdir, "qos_body.tex"), body)
 
 
 def table_industrial(industrial, outdir):
@@ -194,12 +214,12 @@ def table_industrial(industrial, outdir):
     body = []
     for r in industrial:
         body.append(" & ".join([
-            r.get("dataset", "--"), r.get("model", "--"),
+            latex_text(r.get("dataset", "--")), latex_text(r.get("model", "--")),
             num(r, "baseline_accuracy", "{:.3f}"), num(r, "ramses_accuracy", "{:.3f}"),
             num(r, "baseline_auroc", "{:.3f}"), num(r, "ramses_auroc", "{:.3f}"),
             num(r, "output_equivalence", "{:.3f}"),
         ]) + r" \\")
-    write(os.path.join(outdir, "industrial_body.tex"), body)
+    write_table_body(os.path.join(outdir, "industrial_body.tex"), body)
 
 
 def main():

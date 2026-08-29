@@ -223,7 +223,7 @@ the principal workload, integrated across GPU, CPU, and DRAM.
 
 \textbf{Energy--Latency Tradeoff.}
 Fig.~\ref{fig:energy_latency} makes the shape of the trade-off concrete. As batch size and swap intensity vary, baselines trace a convex energy--latency curve: once latency creeps toward the I/O saturation boundary ($\beta \to 1$), synchronization stalls drive both runtime and dynamic power up at the same time.
-RAMSES pulls the Pareto frontier inward---lower latency at the same or lower energy. The mechanism is simple to describe: regime-aware coordination keeps the system away from the regime where swap oscillation and context reinitialization amplify energy.
+RAMSES shifts the achievable energy--latency frontier inward---lower latency at the same or lower energy. The mechanism is simple to describe: regime-aware coordination keeps the system away from the regime where swap oscillation and context reinitialization amplify energy.
 
 Measured across the whole node (GPU, CPU, and DRAM), RAMSES lowers per-inference energy under the tested power settings. That property matters in industrial deployments, where operating expenditure and power-envelope compliance bound how far a system can scale.
 % =====================================================

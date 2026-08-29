@@ -9,10 +9,11 @@ and per-model results are computed by the released scripts from
 \texttt{code/data/actual/raw.jsonl}---16{,}000 request-level records spanning
 eight serving configurations, five models, four task types, and five
 restarts---so each such value traces back to primary measurements rather than to
-normalized plots. The named-industrial-task accuracy and the parameter-sensitivity
-sweep are likewise released as measured CSVs under \texttt{code/data/actual/}.
-Model-load time and peak-VRAM reductions (Fig.~\ref{fig:rameses_consolidated}) and
-the 72-hour arrival-trace QoS series are drawn from separate consolidated runs.
+normalized plots. The named-industrial-task accuracy, the parameter-sensitivity sweep, the
+model-load time and peak-VRAM measurements
+(Table~\ref{tab:loadtime_vram}), and the 72-hour arrival-trace QoS series
+(Table~\ref{tab:qos}) are likewise released as measured CSVs under
+\texttt{code/data/actual/}.
 Raw per-run observations, the request-level logs, and the analysis scripts that compute confidence intervals and significance tests are provided in the review artifact so that every summary in this section can be recomputed from primary data.
 
 \subsection{Research Questions and Claim--Evidence Alignment}
@@ -128,14 +129,16 @@ Selection criteria favor architectural diversity and direct relevance to regime-
 Below we walk through RAMSES across the analytically defined operating regimes, showing how regime-aware coordination translates into performance, stability, and reliability gains.
 \subsubsection{Capacity-limited regime: model initialization under memory pressure}
 
-Fig.~\ref{fig:rameses_consolidated}(a) shows that RAMSES cuts loading time by up to 60\% on Llama-4 17B compared to the PyTorch baseline.
-Against FlexGen, SwapAdvisor, NEO, SpecOffload, and vLLM, the corresponding improvements are 32.4\%, 28.1\%, 19.5\%, 17.8\%, and 15.6\%.
+On Llama-4 17B, RAMSES cuts mean model-load time by 59.9\% relative to PyTorch (38.5~s to 15.4~s; Table~\ref{tab:loadtime_vram}), averaged over 2{,}000 requests.
+Against FlexGen, SwapAdvisor, NEO, SpecOffload, and vLLM the reduction is 56.0\%, 53.4\%, 51.2\%, 48.7\%, and 44.4\%, respectively.
 The source of these gains is twofold: CUDA context initialization no longer happens on the critical path, and NVMe--VRAM transfers are tuned.
+
+\input{tables/loadtime_vram.tex}
 
 \subsubsection{Locality and fragmentation analysis}
 
 Fig.~\ref{fig:rameses_consolidated}(b) shows that the \textit{jemalloc}-based DRAM optimization in RAMSES cuts host-side heap fragmentation and allocation churn.
-On the VRAM side, the gains come from CUDA allocator tuning combined with selective GPU swapping, lowering VRAM usage by roughly 15\% on average.
+On the VRAM side, the gains come from CUDA allocator tuning combined with selective GPU swapping, lowering mean peak VRAM by 15.1\% (29.2~GB to 24.8~GB; Table~\ref{tab:loadtime_vram}).
 Inference failure rate stays under 0.5\% across configurations.
 
 \subsubsection{Coordination-dominated regime: latency reduction beyond raw capacity}
@@ -149,7 +152,7 @@ Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress te
 
 % =====================================================
 \subsubsection{Long-Duration QoS under a Parameterized Synthetic Trace}
-The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  RAMSES records a 0.6\% miss fraction versus 8.7\% for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  P99 latency drift is $\pm3.2\%$ versus 18\% for the reference, with no observed CUDA restart in this finite run.
+The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  Over 4{,}320 one-minute records per system, RAMSES records a 0.60\% miss fraction (26 violations) versus 8.70\% (376 violations) for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  Mean p99 latency drift is 0.97\% versus 5.07\% for the reference, with no observed CUDA restart in this finite run (Table~\ref{tab:qos}).
 
 % =====================================================
 \subsection{Multi-GPU Scope}
@@ -248,20 +251,21 @@ representativeness.  Operating-point coverage is computed from the transfer
 counters measured during each run rather than assumed from the arrival
 parameters.
 
-Under this trace, RAMSES drops p99 latency by 38\%, lowers tail
-jitter by 41\%, and brings SLA violations from 8.7\% down to 0.6\%.
+Under this trace, RAMSES drops mean p99 latency by 37.5\% (546.4~ms to 341.3~ms), cuts
+p99 drift from 5.07\% to 0.97\%, and brings SLA violations from 8.70\% down to 0.60\%.
 Baselines exhibit superlinear latency growth as $\beta \to 1$;
 RAMSES stays in coordination-dominated behavior for
 $0.6 < \beta < 0.9$.
 
 To look at hardware-level dynamics on the constrained side, we sampled VRAM usage, DRAM footprint, NVMe bandwidth utilization, and CPU load at 200\,ms granularity.
-Baseline VRAM allocation drifts upward in fragmentation (up to +18\%) and bursts into swap when $\beta \approx 1$.
-RAMSES holds VRAM variance to $\pm$3\% and the cascading swap spikes never appear.
+Baseline VRAM occupancy fluctuates and bursts into swap when $\beta \approx 1$: mean VRAM variance is 2.85~GB$^2$, whereas RAMSES holds it to 0.74~GB$^2$ and the cascading swap spikes never appear.
 
-NVMe throughput in baseline configurations runs into sustained saturation (94--97\% of peak bandwidth) during burst intervals; under RAMSES it stays under 78\%, so queue depth does not blow up.
-Average swap burst duration drops from 4.3\,s to 1.2\,s.
+NVMe throughput in baseline configurations reaches high sustained saturation (mean 74.9\%, up to 87.9\% of peak bandwidth) during burst intervals; under RAMSES it averages 50.8\% (up to 63.9\%), so queue depth does not blow up.
+The mean swap-burst rate drops from 33.8~MB/s to 10.2~MB/s.
 
-CPU utilization on NUMA-bound cores climbs to 82\% in baselines because of reactive page reclaim and I/O polling; RAMSES holds CPU load under 61\%, which matters in resource-constrained edge boxes.
+CPU utilization on NUMA-bound cores averages 78.1\% in baselines because of reactive page reclaim and I/O polling; RAMSES holds mean CPU load to 61.0\%, which matters in resource-constrained edge boxes.
+
+\input{tables/qos.tex}
 
 In a resource-throttled laboratory configuration (1$\times$A100, 128~GB DRAM, NVMe limited to 60\% of measured peak), RAMSES cuts p99 latency by 31\%, reduces peak VRAM usage by 18\%, and reduces swap-burst duration from 3.8~s to 1.4~s. We do not label this A100 system a factory-edge gateway or infer a real-time deadline from it.
 

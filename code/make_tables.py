@@ -151,6 +151,43 @@ def table_ci(stats, task, model, outdir):
     write(os.path.join(outdir, "latency_ci_body.tex"), body)
 
 
+def table_loadtime_vram(rows, outdir):
+    if not rows:
+        return
+    body = []
+    for r in sys_sort(rows):
+        body.append(" & ".join([
+            SYS_LABEL.get(r["system"], r["system"]),
+            num(r, "load_time_s_mean", "{:.1f}"),
+            num(r, "peak_vram_gb_mean", "{:.1f}"),
+        ]) + r" \\")
+    write(os.path.join(outdir, "loadtime_vram_body.tex"), body)
+
+
+QOS_ROWS = [
+    ("sla_violation_rate_pct", "SLA violation rate (\\%)", "{:.2f}"),
+    ("p99_latency_ms", "Mean p99 latency (ms)", "{:.1f}"),
+    ("p99_drift_pct", "Mean p99 drift (\\%)", "{:.2f}"),
+    ("vram_variance_gb2", "VRAM variance (GB$^2$)", "{:.2f}"),
+    ("nvme_saturation_pct", "NVMe saturation (\\%)", "{:.1f}"),
+    ("swap_burst_mbps", "Swap-burst rate (MB/s)", "{:.1f}"),
+    ("cpu_utilization_pct", "CPU utilization (\\%)", "{:.1f}"),
+]
+
+
+def table_qos(qos, outdir):
+    if not qos:
+        return
+    by_metric = {r["metric"]: r for r in qos}
+    body = []
+    for key, label, fmt in QOS_ROWS:
+        r = by_metric.get(key)
+        if not r:
+            continue
+        body.append(" & ".join([label, num(r, "default", fmt), num(r, "ramses", fmt)]) + r" \\")
+    write(os.path.join(outdir, "qos_body.tex"), body)
+
+
 def table_industrial(industrial, outdir):
     if not industrial:
         return
@@ -170,6 +207,8 @@ def main():
     ap.add_argument("--summary", default=os.path.join(DATA_DIR, "summary.csv"))
     ap.add_argument("--stats", default=os.path.join(DATA_DIR, "stats.csv"))
     ap.add_argument("--industrial", default=os.path.join(DATA_DIR, "industrial_accuracy.csv"))
+    ap.add_argument("--loadtime", default=os.path.join(DATA_DIR, "loadtime_vram.csv"))
+    ap.add_argument("--qos", default=os.path.join(DATA_DIR, "qos_timeseries.csv"))
     ap.add_argument("--outdir", default=PAPER_TABLES)
     ap.add_argument("--task", default="ttft", help="filter task; empty for all")
     ap.add_argument("--model", default="", help="filter model; empty for all")
@@ -194,6 +233,12 @@ def main():
               "validation/policy tables skipped.")
     table_ci(stats, task, model, a.outdir)
     table_industrial(industrial, a.outdir)
+    loadtime = read_csv(a.loadtime)
+    qos = read_csv(a.qos)
+    reject_projections(loadtime, "load-time/VRAM")
+    reject_projections(qos, "QoS time series")
+    table_loadtime_vram(loadtime, a.outdir)
+    table_qos(qos, a.outdir)
 
 
 if __name__ == "__main__":

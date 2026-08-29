@@ -1,0 +1,10 @@
+metric,default,ramses,default_min,default_max,ramses_min,ramses_max,unit,data_source
+records,4320,4320,,,,,count,actual_test_variant_0829
+sla_violations,376,26,,,,,count,actual_test_variant_0829
+sla_violation_rate_pct,8.7037,0.6019,,,,,percent,actual_test_variant_0829
+p99_latency_ms,546.3746,341.2829,501.0318,686.8433,321.9106,400.3660,ms,actual_test_variant_0829
+p99_drift_pct,5.0720,0.9713,-3.6477,32.0853,-4.7602,18.4515,percent,actual_test_variant_0829
+vram_variance_gb2,2.8537,0.7400,2.0011,3.7008,0.5194,0.9608,GB^2,actual_test_variant_0829
+nvme_saturation_pct,74.8887,50.8208,66.0015,87.9149,42.0012,63.9026,percent,actual_test_variant_0829
+swap_burst_mbps,33.8194,10.2170,0,109.6332,0,35.6753,MB/s,actual_test_variant_0829
+cpu_utilization_pct,78.0646,60.9967,65.0954,90.9373,48.0853,73.9200,percent,actual_test_variant_0829

@@ -27,7 +27,10 @@ parameter-sensitivity sweep; and a named, reproducible industrial task
 output equivalence above 0.999. Energy is now measured across the whole node
 (GPU via NVML plus CPU package and DRAM via RAPL, on a shared clock): whole-node
 energy per token falls 47% and the energy--delay product 70%, with a
-power-analyzer rank cross-check. We also specify the online controller and the
+power-analyzer rank cross-check. Model-load time and peak VRAM are reported from
+2,000 requests per system (59.9% and 15.1% reductions), and the 72-hour arrival
+trace is summarized from 4,320 one-minute records per system (SLA violations
+8.70% to 0.60%, p99 latency 546 ms to 341 ms), all as measured CSVs. We also specify the online controller and the
 GPU Booster implementation and correct the four reviewer-identified references
 against their primary records. The submission is accompanied by a
 reproducibility artifact containing the LD_PRELOAD orchestrator layer, the

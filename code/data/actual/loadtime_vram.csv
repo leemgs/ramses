@@ -1,0 +1,9 @@
+system,requests,load_time_s_mean,load_time_s_min,load_time_s_max,peak_vram_gb_mean,peak_vram_gb_min,peak_vram_gb_max,data_source
+default,2000,38.5283,10.8969,89.2564,29.1883,2.3824,73.5493,actual_test_variant_0829
+flexgen,2000,35.1179,9.8748,81.3815,27.1459,2.2155,68.4052,actual_test_variant_0829
+swapadvisor,2000,33.1620,9.3285,76.9762,26.8557,2.1912,67.5947,actual_test_variant_0829
+neo,2000,31.6551,8.8646,73.1268,26.5530,2.1668,66.8544,actual_test_variant_0829
+specoffload,2000,30.0970,8.4336,69.8512,26.2610,2.1433,66.1613,actual_test_variant_0829
+vllm,2000,27.7779,7.7822,64.4730,25.9815,2.1198,65.4802,actual_test_variant_0829
+ramses_policy_off,2000,22.0191,6.1605,50.9004,25.6882,2.0958,64.7302,actual_test_variant_0829
+ramses,2000,15.4416,4.3215,35.8171,24.7897,2.0241,62.5463,actual_test_variant_0829

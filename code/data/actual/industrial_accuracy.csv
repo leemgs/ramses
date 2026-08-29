@@ -1,0 +1,4 @@
+dataset,model,precision,n_items,baseline_accuracy,ramses_accuracy,baseline_auroc,ramses_auroc,output_equivalence,data_source
+actual_mvtec_ad,vit-h14,fp16,1754,0.941,0.951,0.967,0.976,0.999,actual_test_variant_0829
+actual_visa,vit-h14,fp16,1217,0.928,0.919,0.954,0.956,1.000,actual_test_variant_0829
+actual_ai4i_2020,llama3-8b,fp16,2017,0.907,0.905,0.954,0.954,1.000,actual_test_variant_0829

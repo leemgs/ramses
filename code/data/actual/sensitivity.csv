@@ -1,0 +1,15 @@
+param,value,p99_ms,data_source
+block_size_mb,1,457,actual_test_variant_0829
+block_size_mb,2,426,actual_test_variant_0829
+block_size_mb,4,400,actual_test_variant_0829
+block_size_mb,8,489,actual_test_variant_0829
+block_size_mb,16,529,actual_test_variant_0829
+sampling_ms,100,392,actual_test_variant_0829
+sampling_ms,200,398,actual_test_variant_0829
+sampling_ms,400,492,actual_test_variant_0829
+hysteresis_pct,2,458,actual_test_variant_0829
+hysteresis_pct,5,390,actual_test_variant_0829
+hysteresis_pct,10,500,actual_test_variant_0829
+reuse_window,16,480,actual_test_variant_0829
+reuse_window,32,434,actual_test_variant_0829
+reuse_window,64,451,actual_test_variant_0829

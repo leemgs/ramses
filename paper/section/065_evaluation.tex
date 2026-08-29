@@ -140,7 +140,7 @@ Inference failure rate stays under 0.5\% across configurations.
 
 \subsubsection{Coordination-dominated regime: latency reduction beyond raw capacity}
 
-On the principal Llama-4 17B TTFT workload, RAMSES cuts median latency by 35.8\% (871.6~ms to 563.0~ms) and raises token throughput by 61\% relative to PyTorch (Table~\ref{tab:latency_percentiles}; all records at batch~1).
+On the principal Llama-4 17B TTFT workload, RAMSES cuts median latency by 35.4\% (871.6~ms to 563.0~ms) and raises token throughput by 61\% relative to PyTorch (Table~\ref{tab:latency_percentiles}; all records at batch~1).
 Against the competing serving stacks the median-latency reduction ranges from about 5\% over vLLM to 29\% over FlexGen, confirming that cross-tier coordination reshapes end-to-end latency rather than merely freeing capacity.
 
 \subsubsection{Stability collapse and recovery across regime boundaries}
@@ -207,9 +207,9 @@ $E_{\text{inf}}$ Joules per inference request,
 and the energy--delay product (EDP) capturing the energy--latency trade-off jointly.
 
 \textbf{Results.}
-Measured across the whole node, RAMSES drops energy per token by 46.7\% and
+Measured across the whole node and averaged over all configurations, RAMSES drops energy per token by 46.7\% and
 energy per inference by 46.7\% relative to PyTorch, and the energy--delay product
-by 69.6\%---latency and energy fall together rather than trading off. Because
+by 69.6\%---latency and energy fall together rather than trading off (Table~\ref{tab:energy} lists the absolute principal-workload values). Because
 energy per token drops while token throughput rises by 61\%, whole-node
 throughput-per-watt improves by roughly 88\%; it also exceeds every other
 baseline, consistent with the energy--latency frontier. Table~\ref{tab:energy}

@@ -1,3 +1,11 @@
+> **[HISTORICAL — SUPERSEDED]** 이 문서는 초기 라운드(Round 1–5)의 그림·표
+> 정합성 수정 기록입니다. 이후 원고는 근본적으로 재구성되어, 아래에서
+> 언급되는 Theorem 1·Lemma 1·2, `α_critical`, Table III (IEC 61508 SIL
+> Mapping), 2 ms/TSN/deterministic 주장은 **모두 제거되었습니다**. 현재 원고에
+> 반영된 리뷰어 대응의 최종 상태는 `REVIEW_RESPONSE.md`(및 `FINAL_REVIEW_AUDIT.md`,
+> `REFERENCE_AUDIT.md`)를 기준으로 하십시오. 본 문서는 변경 이력 보존 목적으로만
+> 남겨 둡니다.
+
 # 업데이트 요약 (Figure 정합성 수정)
 
 날짜: 2026-05-18 (Round 2)

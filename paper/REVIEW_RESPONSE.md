@@ -81,7 +81,7 @@ scoped as GPU-only with a PDU rank cross-check.
 
 1. **Abstract/conclusion.** Both now state the challenge, method, single-node
    scope, and the headline percentages (60% load, 35% latency, 15% VRAM,
-   18.5% TP/W).
+   47% whole-node energy per token, 61% throughput, ~88% throughput-per-watt).
 2. **Contributions.** The bullets name the distinct model, the specified
    controller, the single-node implementation, and the reproducible artifact,
    and Tables I–II position RAMSES against competing systems.

@@ -30,8 +30,9 @@ an \texttt{LD\_PRELOAD} layer for unmodified PyTorch applications. We do not
 claim a hardened GPUDirect Storage or multi-node data path.
 \item \emph{Boundary-seeking empirical evidence.} The evaluation crosses models
 and pressure regimes, includes a controller-disabled counterfactual and
-parameter sweeps, and reports absolute tails, uncertainty, failures, and GPU
-energy. Reported maxima are configuration-specific effects, not guarantees.
+parameter sweeps, and reports absolute tails, uncertainty, failures, and
+synchronized whole-node (GPU, CPU, DRAM) energy. Reported maxima are
+configuration-specific effects, not guarantees.
 \end{itemize}
 
 The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.

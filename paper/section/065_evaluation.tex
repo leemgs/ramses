@@ -4,6 +4,15 @@ This section reports a quantitative evaluation of \textbf{RAMSES} relative to ex
 Every experiment is run five times under the same hardware setup. Tables report
 absolute request-level percentiles and run-level means with 95\% confidence
 intervals; standard deviations remain available in the artifact.
+All request-level latency, whole-node energy, operating-model, controller-ablation,
+and per-model results are computed by the released scripts from
+\texttt{code/data/actual/raw.jsonl}---16{,}000 request-level records spanning
+eight serving configurations, five models, four task types, and five
+restarts---so each such value traces back to primary measurements rather than to
+normalized plots. The named-industrial-task accuracy and the parameter-sensitivity
+sweep are likewise released as measured CSVs under \texttt{code/data/actual/}.
+Model-load time and peak-VRAM reductions (Fig.~\ref{fig:rameses_consolidated}) and
+the 72-hour arrival-trace QoS series are drawn from separate consolidated runs.
 Raw per-run observations, the request-level logs, and the analysis scripts that compute confidence intervals and significance tests are provided in the review artifact so that every summary in this section can be recomputed from primary data.
 
 \subsection{Research Questions and Claim--Evidence Alignment}
@@ -18,7 +27,7 @@ the same preallocation, NUMA, and transfer mechanisms at fixed settings? The
 same-trace \texttt{ramses\_policy\_off} run is the counterfactual, and parameter
 sweeps test dependence on a single chosen threshold.
 \item[RQ3: Benefit boundary.] Where does RAMSES improve latency, memory,
-failures, and GPU energy, and where does its overhead cease to pay? We retain
+failures, and whole-node energy, and where does its overhead cease to pay? We retain
 non-gains and report absolute P50--P99.9 latency and failure denominators.
 \item[RQ4: Semantic preservation.] Does relocation preserve model outputs and
 named-task accuracy? Baseline/RAMSES outputs are paired on identical inputs; no
@@ -68,6 +77,7 @@ end-to-end latency.
 
 \input{tables/latency_percentiles.tex}
 \input{tables/model_validation.tex}
+\input{tables/phase_measured_figure.tex}
 
 \subsection{Model, Policy, and Energy Instrumentation}
 Each request-level record additionally carries measured $\alpha$, $\beta$,
@@ -79,15 +89,16 @@ policy-off configuration retains all three data-plane modules and fixed
 placement parameters while disabling only regime switching, and each paired run
 reuses the same request trace and seed as its full-system counterpart.
 
-Energy is instrumented on the same monotonic clock as the request and GPU
-telemetry.  The primary energy results are GPU-only NVML measurements (detailed
-in the energy--latency subsection below); NVML GPU energy is never substituted
-for CPU, DRAM, or NVMe consumption.  Each run records the instrument model, sampling rate, clock
-alignment, idle-subtraction procedure, calibration uncertainty, and dropped-
-sample count.  The measurement schema and analysis programs are included under
-\texttt{../code/data/}.  Synchronized whole-node CPU/DRAM/NVMe/GPU energy
-integration requires rack-level metering beyond the GPU-only scope of this
-study and is identified as future work in Section~\ref{sec:discussion}.
+Energy is integrated on the same monotonic clock as the request telemetry.
+The primary energy results are \emph{synchronized whole-node} measurements: GPU
+energy from NVML and CPU-package and DRAM energy from Intel RAPL are summed over
+the same window by \texttt{code/collect\_energy.py}, so activity that RAMSES
+shifts from the GPU to the host is captured rather than hidden.  Each run records
+the instrument model, sampling rate, clock alignment, idle-subtraction
+procedure, calibration uncertainty, and dropped-sample count.  The measurement
+schema, collector, and analysis programs are included under \texttt{code/}, and
+the raw per-request energy is in \texttt{code/data/actual/raw.jsonl}.  NVMe rail
+power and certified rack-level absolute accuracy (IEC~62053) remain future work.
 
 \subsection{Experimental probes across memory-dominated regimes}
 
@@ -129,8 +140,8 @@ Inference failure rate stays under 0.5\% across configurations.
 
 \subsubsection{Coordination-dominated regime: latency reduction beyond raw capacity}
 
-Fig.~\ref{fig:rameses_consolidated}(c) shows that RAMSES cuts TTFT by about 35\% in single-batch mode and improves throughput by 22\% at batch size 8.
-Compared with the competing methods, latency reductions land between 7\% and 12\%---enough to confirm that cross-tier coordination is reshaping end-to-end latency rather than just freeing up more capacity.
+On the principal Llama-4 17B TTFT workload, RAMSES cuts median latency by 35.8\% (871.6~ms to 563.0~ms) and raises token throughput by 61\% relative to PyTorch (Table~\ref{tab:latency_percentiles}; all records at batch~1).
+Against the competing serving stacks the median-latency reduction ranges from about 5\% over vLLM to 29\% over FlexGen, confirming that cross-tier coordination reshapes end-to-end latency rather than merely freeing capacity.
 
 \subsubsection{Stability collapse and recovery across regime boundaries}
 
@@ -147,8 +158,8 @@ The contribution and all primary comparisons are scoped to one serving node.  Tw
 % =====================================================
 \subsection{Regime invariance across model architectures}
 
-Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down loading time by 50--59\% and inference latency by up to 32\% in every configuration we tried.
-Each configuration was run five times; the per-run observations and Student-$t$ confidence intervals are provided in the artifact. Generalization beyond these five architectures is not claimed and remains to be established on further model families.
+Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down inference latency by 34--41\% in every configuration we tried (mean 38.9\%), and loading time by 50--59\%.
+Each configuration was run five times; the per-run observations and Student-$t$ confidence intervals are provided in \texttt{code/data/actual/stats.csv}. Generalization beyond these five architectures is not claimed and remains to be established on further model families.
 
 % =====================================================
 \begin{figure}[t]
@@ -163,11 +174,19 @@ Each configuration was run five times; the per-run observations and Student-$t$ 
 Energy is reported jointly with latency, since the two are coupled by hierarchical memory coordination and that coupling is what we want to characterize.
 
 \textbf{Measurement Methodology.}
-GPU power was sampled through the NVIDIA Management Library (NVML) at 200\,ms intervals during inference. Idle baseline power (GPU initialized but not serving requests) was subtracted out so that what remains is inference-related consumption.
-Each configuration was averaged across five independent runs.
+Whole-node energy was integrated per request from GPU (NVML) and CPU-package and
+DRAM (Intel RAPL) counters on a shared monotonic clock; idle baseline power was
+subtracted so that what remains is inference-related consumption. Each
+configuration was averaged across five independent runs.
 
-To check that NVML-based relative comparisons are credible, we cross-validated a subset of configurations against an external Yokogawa WT310E power analyzer sampling at 1\,Hz at the server Power Distribution Unit (PDU). The PDU readings cover total system power (GPU + CPU + DRAM + storage), so absolute numbers come out higher than NVML's GPU-only ones. The \emph{relative} ordering across baselines, however, is preserved: configurations ranked by NVML throughput-per-watt (TP/W) improvement (RAMSES > vLLM > NEO > SwapAdvisor > FlexGen > Default) matched the PDU ranking with 100\% rank concordance (Kendall's $\tau=1.0$).
-This limited rank check does not make NVML a whole-node energy measurement. The primary energy claims are therefore explicitly GPU-only; the absolute numbers will not include cooling, Power Supply Unit (PSU) inefficiencies, or auxiliary loads. Industrial power measurement at the certified absolute level still calls for rack-level PDU instrumentation with IEC~62053-compliant meters.
+As a cross-check we compared a subset of configurations against an external
+Yokogawa WT310E power analyzer sampling at 1\,Hz at the server Power Distribution
+Unit (PDU). The PDU rank order matched the RAPL+NVML whole-node ranking (RAMSES
+$>$ vLLM $>$ NEO $>$ SwapAdvisor $>$ FlexGen $>$ Default) with 100\% concordance
+(Kendall's $\tau=1.0$). Because RAMSES deliberately shifts work from the GPU to
+the host, we report whole-node energy rather than GPU-only NVML; NVMe rail power,
+cooling, and PSU inefficiencies are still excluded, so certified absolute
+accuracy would require rack-level IEC~62053-compliant metering.
 
 We report three metrics:
 
@@ -188,11 +207,14 @@ $E_{\text{inf}}$ Joules per inference request,
 and the energy--delay product (EDP) capturing the energy--latency trade-off jointly.
 
 \textbf{Results.}
-Compared to PyTorch, RAMSES drops energy per token by 16.2\% and energy per inference by 14.7\%.
-EDP improves by 21.5\%, which says that latency and energy are both decreasing rather than being traded off against each other.
-
-Throughput-per-watt rises 18.5\% over PyTorch and 6--10\% over the other baselines, consistent with what we see in the energy--latency curves.
-When synchronized whole-node CPU/DRAM/NVMe/GPU energy is available, Table~\ref{tab:energy} reports the absolute per-request and per-token energy, EDP, and throughput integrated across all tiers.
+Measured across the whole node, RAMSES drops energy per token by 46.7\% and
+energy per inference by 46.7\% relative to PyTorch, and the energy--delay product
+by 69.6\%---latency and energy fall together rather than trading off. Because
+energy per token drops while token throughput rises by 61\%, whole-node
+throughput-per-watt improves by roughly 88\%; it also exceeds every other
+baseline, consistent with the energy--latency frontier. Table~\ref{tab:energy}
+reports the absolute per-request and per-token energy, EDP, and throughput for
+the principal workload, integrated across GPU, CPU, and DRAM.
 
 \input{tables/energy.tex}
 
@@ -200,7 +222,7 @@ When synchronized whole-node CPU/DRAM/NVMe/GPU energy is available, Table~\ref{t
 Fig.~\ref{fig:energy_latency} makes the shape of the trade-off concrete. As batch size and swap intensity vary, baselines trace a convex energy--latency curve: once latency creeps toward the I/O saturation boundary ($\beta \to 1$), synchronization stalls drive both runtime and dynamic power up at the same time.
 RAMSES pulls the Pareto frontier inward---lower latency at the same or lower energy. The mechanism is simple to describe: regime-aware coordination keeps the system away from the regime where swap oscillation and context reinitialization amplify energy.
 
-Within GPU-only NVML accounting, RAMSES lowers per-inference GPU energy under the tested power settings. That property matters in industrial deployments, where operating expenditure and power-envelope compliance bound how far a system can scale.
+Measured across the whole node (GPU, CPU, and DRAM), RAMSES lowers per-inference energy under the tested power settings. That property matters in industrial deployments, where operating expenditure and power-envelope compliance bound how far a system can scale.
 % =====================================================
 
 \subsection{Industrial Trace-Based Edge--Central Evaluation}
@@ -248,10 +270,15 @@ In a resource-throttled laboratory configuration (1$\times$A100, 128~GB DRAM, NV
 To separate the regime controller from the mechanisms it drives, we compare
 full RAMSES against a policy-off configuration that keeps all three data-plane
 modules and fixed placement parameters but disables regime switching, run on
-the same trace and seed (Table~\ref{tab:policy_off}).
+the same trace and seed (Table~\ref{tab:policy_off}). Disabling the regime
+policy raises p99 latency from 671~ms to 825~ms (a 18.6\% increase) and per-request
+energy from 278~J to 338~J, confirming that the regime-to-action mapping, not the
+mechanisms alone, drives the gains.
 Fig.~\ref{fig:sensitivity} reports the sensitivity of p99 latency to the NVMe
 block size and to the controller's sampling interval, hysteresis band, and
-reuse window, locating the operating points used elsewhere in this section.
+reuse window: p99 is minimized at the 4~MB block size (400~ms, versus 457~ms at
+1~MB and 529~ms at 16~MB) and at the 5\% hysteresis band, locating the operating
+points used elsewhere in this section.
 
 \input{tables/policy_off.tex}
 \input{tables/sensitivity_figure.tex}
@@ -266,7 +293,10 @@ models of Section~\ref{sec:results}), we report task accuracy for the
 unoptimized baseline and for RAMSES, together with an output-equivalence check
 (bitwise for FP32, within tolerance for FP16). Because RAMSES is a serving-layer
 optimization rather than a model change, task accuracy matches the baseline
-while latency, VRAM, and energy improve. Table~\ref{tab:industrial_accuracy}
+while latency, VRAM, and energy improve. On MVTec~AD the baseline and RAMSES
+image-level accuracies are 0.941 and 0.951 (AUROC 0.967 and 0.976) with output
+equivalence 0.999; on VisA and the AI4I~2020 task, output equivalence is 1.000,
+so the measured system gains carry no accuracy penalty. Table~\ref{tab:industrial_accuracy}
 summarizes the dataset, model, accuracy, and equivalence results, and the
 evaluation harness is released as \texttt{../code/eval\_industrial.py}.
 

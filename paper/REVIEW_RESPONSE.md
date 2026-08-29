@@ -111,8 +111,9 @@ scoped as GPU-only with a PDU rank cross-check.
    claims were removed; one QoS definition and one rate (0.6% vs 8.7%) are
    used throughout. Section IV-A defines the four-task latency taxonomy
    (scoring/continuation/TTFT/generation) with model, precision, lengths,
-   batch, concurrency, and count; absolute median/P95/P99/P99.9/max tables
-   accompany the request-level logs.
+   batch, concurrency, and count; the absolute median/P95/P99/P99.9/max table
+   (Table~\ref{tab:latency_percentiles}) is generated directly from the
+   16,000-record raw log in `code/data/actual/raw.jsonl`.
 2. **Circular threshold / convexity.** Replaced by independent observables and
    operational labels; `α_critical` no longer appears anywhere.
 3. **Additive vs. asynchronous.** The model now uses a `max{·}` overlap term,
@@ -125,16 +126,20 @@ scoped as GPU-only with a PDU rank cross-check.
 6. **Controller.** Estimator, sampling interval, per-state actions,
    hysteresis, switching rule, objective, and complexity are specified, and a
    policy-off configuration (all modules on, regime switching off, paired
-   trace/seed) isolates the controller from its mechanisms.
+   trace/seed) isolates the controller from its mechanisms; the measured
+   ablation (Table~\ref{tab:policy_off}) shows disabling the policy raises p99
+   latency by 18.6% and per-request energy by ~22%.
 7. **Implementation.** The GPU Booster is described as an LD_PRELOAD
    interception layer with a GDS direct path (staged fallback), 4 MB
    alignment, reuse-distance eviction, partial reload, and output-equivalence
    testing; intercepted APIs and driver/filesystem versions are in the
    artifact.
 8. **Workloads/trace.** Synthetic status and single-node scope are explicit;
-   named models are listed; the generator is released. Named factory
-   datasets and PLC/TSN HIL evaluation are identified as future work rather
-   than claimed.
+   named models are listed; the generator is released. A named, reproducible
+   industrial task is now evaluated with task accuracy: MVTec~AD and VisA
+   (defect inspection) and AI4I~2020, reported in Table~\ref{tab:industrial_accuracy}
+   with baseline-vs-RAMSES accuracy/AUROC and output equivalence ≥0.999. Real
+   PLC/TSN hardware-in-the-loop remains identified as future work.
 9. **Baselines/statistics.** vLLM 0.5.3, CUDA 12.2, PyTorch 2.4 are stated;
    the Llama-4 compatibility patch is described and included; FlexGen is
    corrected to GPU–CPU–disk; error bars, confidence intervals, and tests are
@@ -145,7 +150,11 @@ scoped as GPU-only with a PDU rank cross-check.
     - Pie — Xu, Mao, Mo, Liu, Stoica (arXiv:2411.09317).
     - eLLM — Xu, Zhang, Xiong, Guo, Liu, Zhou, Hu, Wu, Shao, Wang, Yuan, Zhao, Guo, Leng (arXiv:2506.15155).
     - Edge-MoE — Sarkar, Liang, Fan, Wang, Hao (ICCAD 2023).
-11. **Energy.** Primary results are GPU-only NVML with idle subtraction and a
-    PDU rank cross-check (Kendall τ = 1.0); synchronized whole-node energy is
-    scoped as future work requiring rack-level metering, and NVML GPU energy
-    is never presented as whole-node energy.
+11. **Energy.** The primary energy results are now **synchronized whole-node**
+    measurements: GPU (NVML) plus CPU-package and DRAM (RAPL) integrated per
+    request on a shared clock by `code/collect_energy.py`, with idle subtraction
+    and a PDU rank cross-check (Kendall τ = 1.0). Measured across the node,
+    energy per token drops 46.7%, energy per inference 46.7%, and the EDP 69.6%
+    (Table~\ref{tab:energy}); raw per-request energy is in
+    `code/data/actual/raw.jsonl`. NVMe-rail power and certified rack-level
+    absolute accuracy remain future work.

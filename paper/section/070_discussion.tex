@@ -38,8 +38,8 @@ the regime account rather than being dismissed as a tuning problem.
 The experiments here are on LLM and vision-model inference, but regime-dependent behavior is a general property of multi-tier memory.
 Anywhere working sets exceed fast-tier capacity and execution depends on cross-tier movement plus synchronization, the same regime transitions appear.
 On constrained industrial edge boxes---where $C_{\mathrm{VRAM}} \ll C_{\mathrm{DRAM}}$ (the GPU fast-tier is the binding constraint) or where secondary storage bandwidth is tight---you sit intrinsically near the capacity boundary ($\alpha \approx 1$) or the transfer boundary ($\beta \approx 1$), and instabilities amplify. That matches our observations.
-On energy: we measured with NVIDIA NVML.
-In real industrial deployments, rack-level PDU or three-phase meters pick up cooling and PSU loads too. Absolute numbers will be different. The relative energy--latency trade-offs that come from regime transitions, though, hold up~\cite{huang2019gpipe,stojkovic2025dynamollm}.
+On energy: we measured synchronized whole-node energy (GPU via NVML plus CPU package and DRAM via RAPL).
+In real industrial deployments, rack-level PDU or three-phase meters additionally pick up NVMe-rail, cooling, and PSU loads, so certified absolute numbers will be higher. The relative energy--latency trade-offs that come from regime transitions, though, hold up~\cite{huang2019gpipe,stojkovic2025dynamollm}.
 
 \subsection{Limitations and Future Work}
 \label{sec:future_work}
@@ -47,7 +47,7 @@ In real industrial deployments, rack-level PDU or three-phase meters pick up coo
 A few things we want to be honest about.
 First, the evaluation is single-node. Multi-node and cross-fabric deployments---NVLink or InfiniBand clusters, for example---may introduce extra communication-induced regime shifts that we have not characterized here.
 Second, the 72-hour trace is synthetic and the available artifact lacks factory reference samples. We therefore withdraw distribution-fidelity claims; real traces may require a different arrival model and calibration procedure.
-Third, energy measurement here is based on NVML telemetry that we cross-validated against an external PDU (Kendall $\tau=1.0$). Rack-level or facility-level overheads (cooling, PSU inefficiencies) are not captured.
+Third, energy measurement integrates GPU (NVML) with CPU-package and DRAM (RAPL) on a shared clock, cross-validated against an external PDU (Kendall $\tau=1.0$). NVMe-rail power and facility-level overheads (cooling, PSU inefficiencies) are not captured, so absolute certified accounting remains future work.
 
 Three directions look natural from where we ended up.
 Extending the regime-aware model to multi-node infrastructures and to heterogeneous accelerators (Neural Processing Units, NPUs; Field-Programmable Gate Arrays, FPGAs).

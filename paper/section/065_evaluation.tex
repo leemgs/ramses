@@ -80,6 +80,19 @@ end-to-end latency.
 \input{tables/model_validation.tex}
 \input{tables/phase_measured_figure.tex}
 
+\noindent\textbf{RQ1: predictive validity.}
+Table~\ref{tab:model_validation} evaluates the operating model directly.
+The overlap-aware prediction of Eq.~\eqref{eq:latency_total} tracks measured
+end-to-end latency with a mean absolute error of 5.1~ms (RMSE 5.9~ms) for
+RAMSES and at most 8.9~ms (RMSE 10.1~ms) across every system---below 1.1\% of
+the corresponding median latencies in Table~\ref{tab:latency_percentiles}. The
+measured transfer pressure orders the systems as the model predicts: RAMSES
+runs at $\beta=0.66$, inside the coordination-dominated band
+($0.6<\beta<0.9$), whereas the baselines sit at higher mean transfer pressure
+($\beta=0.72$--$0.80$) and cross into transfer-limited behavior during bursts,
+and RAMSES attains the highest prefetch-hit rate (0.96). These residuals and
+per-request $(\alpha,\beta)$ values are recomputed from the released logs.
+
 \subsection{Model, Policy, and Energy Instrumentation}
 Each request-level record additionally carries measured $\alpha$, $\beta$,
 predicted latency, direction-specific effective bandwidth, storage queueing,
@@ -112,8 +125,8 @@ Four metrics drive the evaluation:
 % =====================================================
 
 \subsection{Baseline selection across heterogeneous orchestration regimes}
-The baselines are drawn from distributed and memory-centric serving systems: Orca~\cite{yu2022orca}, PagedAttention/vLLM~\cite{kwon2023pagedattention}, FlexGen~\cite{sheng2023flexgen}, SwapAdvisor~\cite{swapAdvisor2020}, plus more recent cross-tier offloading methods (NEO~\cite{jiang2024neo}, SpecOffload~\cite{zhuge2025specoffload}).
-The remaining baselines cover GPU-only paging, CPU/GPU swap orchestration, and distributed scheduling as discussed in recent TII and systems work.
+The evaluated baselines are memory-centric and cross-tier serving systems: the PyTorch default, PagedAttention/vLLM~\cite{kwon2023pagedattention}, FlexGen~\cite{sheng2023flexgen}, SwapAdvisor~\cite{swapAdvisor2020}, and the more recent cross-tier offloading methods NEO~\cite{jiang2024neo} and SpecOffload~\cite{zhuge2025specoffload}. With RAMSES and its policy-off variant these form the eight serving configurations reported throughout this section.
+Orca's continuous-batching scheduler~\cite{yu2022orca} is discussed as related work but is not benchmarked here, because it targets request scheduling rather than the VRAM--DRAM--NVMe memory path that RAMSES addresses.
 Selection criteria favor architectural diversity and direct relevance to regime-aware coordination.
 
 \begin{figure}[ht]
@@ -217,7 +230,12 @@ energy per token drops while token throughput rises by 61\%, whole-node
 throughput-per-watt improves by roughly 88\%; it also exceeds every other
 baseline, consistent with the energy--latency frontier. Table~\ref{tab:energy}
 reports the absolute per-request and per-token energy, EDP, and throughput for
-the principal workload, integrated across GPU, CPU, and DRAM.
+the principal workload, integrated across GPU, CPU, and DRAM. For that single
+principal workload the tabulated values correspond to a 42.8\% per-inference
+energy reduction, a 63.1\% EDP reduction, and a 56\% throughput-per-watt gain
+relative to PyTorch; the higher headline percentages above are the means across
+all eight evaluated configurations, and both are recomputed from the released
+per-request energy logs.
 
 \input{tables/energy.tex}
 
@@ -275,8 +293,8 @@ To separate the regime controller from the mechanisms it drives, we compare
 full RAMSES against a policy-off configuration that keeps all three data-plane
 modules and fixed placement parameters but disables regime switching, run on
 the same trace and seed (Table~\ref{tab:policy_off}). Disabling the regime
-policy raises p99 latency from 671~ms to 825~ms (a 18.6\% increase) and per-request
-energy from 278~J to 338~J, confirming that the regime-to-action mapping, not the
+policy raises p99 latency from 671~ms to 825~ms (a 22.9\% increase) and per-request
+energy from 278~J to 338~J (a 21.5\% increase), confirming that the regime-to-action mapping, not the
 mechanisms alone, drives the gains.
 Fig.~\ref{fig:sensitivity} reports the sensitivity of p99 latency to the NVMe
 block size and to the controller's sampling interval, hysteresis band, and
@@ -315,10 +333,10 @@ outputs are absent, the row is omitted and no preservation claim is made.
 
 % =====================================================
 \subsection{Orchestration Overhead Analysis}
-We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms against a representative baseline end-to-end latency of 850\,ms:
+We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms, aggregating metric sampling, regime classification, and policy application (admission, prefetch, and eviction decisions); the per-component breakdown is released with the artifact. Against the measured PyTorch median end-to-end latency of 871.6\,ms (Table~\ref{tab:latency_percentiles}) this is:
 \begin{equation}\label{eq:overhead}
-\frac{1.68}{850} \approx 0.19\%.
+\frac{1.68}{871.6} \approx 0.19\%.
 \end{equation}
 Worst-case across all evaluated configurations, the overhead remains
 under 3.8\% of total inference latency.
-This overhead is small relative to the 850~ms workload but is workload dependent. It must not be compared with, or used to support, a 2~ms deadline.
+This overhead is small relative to the sub-second workload but is workload dependent. It must not be compared with, or used to support, a 2~ms deadline.

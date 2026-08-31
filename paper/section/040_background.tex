@@ -35,7 +35,7 @@ Heavy slab-allocator activity together with frequent \texttt{futex()} calls prod
 Under DRAM pressure, aggressive multiprocessing fragmented memory and ran up the context-switch bill---throughput and stability both suffered~\cite{sarkar2023edgemoe}.
 
 \textbf{Implications.}
-Read together, these say one thing: VRAM, DRAM, synchronization, and I/O are tightly coupled. You cannot tune one in isolation without the others moving on you.
+Read together, these observations point to a single conclusion: VRAM, DRAM, synchronization, and I/O are tightly coupled, and none can be tuned in isolation without perturbing the others.
 For industrial CPS, the same instability propagates outward into control loops, where it stops being a performance issue and becomes a reliability issue. Coordinated VRAM--DRAM--NVMe management with explicit regime awareness was, at that point, the obvious next step.
 
 \subsection{Limitations of Prior Approaches}

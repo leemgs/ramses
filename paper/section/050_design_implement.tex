@@ -160,7 +160,7 @@ The goal is to serve models whose state exceeds VRAM capacity while keeping expo
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/phase_diagram.png}
-\caption{Operating map for the two pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds used by the controller, not feasibility, determinism, or stability guarantees. Under the evaluated workloads RAMSES operates in the coordination-dominated region ($0.6<\beta<0.9$), whereas baselines drift toward the transfer-pressured boundary ($\beta\to1$); the corresponding measured behavior is reported in Section~\ref{sec:results}.}
+\caption{Operating map for the two pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds used by the controller, not feasibility, determinism, or stability guarantees. Under the evaluated workloads RAMSES operates in the coordination-dominated region ($0.6<\beta<0.9$), whereas the baselines run at higher mean transfer pressure and approach the transfer-limited boundary ($\beta\to1$) under burst load; the corresponding measured behavior is reported in Section~\ref{sec:results}.}
 \label{fig:phase_diagram}
 \end{figure}
 
@@ -198,8 +198,8 @@ T_{\mathrm{xfer}}&=&L_0+q+V_{\uparrow}/B_{\uparrow}+V_{\downarrow}/B_{\downarrow
 \end{IEEEeqnarray}
 The max operator prevents double counting overlapped DMA and compute.  Block
 rounding is included in the measured volumes.  We call observations with
-$\alpha>1$ capacity-pressured and observations with $\beta\geq1$ transfer-
-pressured; the remaining points are coordination-sensitive.  These are
+$\alpha>1$ capacity-limited and observations with $\beta\geq1$ transfer-
+limited; the remaining points are coordination-dominated.  These are
 operational labels, not theorems.  They neither imply zero swapping nor a
 worst-case bound.  Fig.~\ref{fig:phase_diagram} summarizes the resulting
 classification.  Section~\ref{sec:results} reports the operating regime the
@@ -213,9 +213,9 @@ Every 200~ms the analyzer reads allocated bytes, transfer counters, queue
 depth, effective bandwidth, and exponentially weighted compute, memory, and
 synchronization times.  It computes Eqs.~\eqref{eq:alpha_def}--\eqref{eq:beta_def}
 in constant time.  To avoid oscillation, a state change requires three
-consecutive samples beyond a 5\% hysteresis band.  In the capacity-pressured
+consecutive samples beyond a 5\% hysteresis band.  In the capacity-limited
 state the policy rejects admissions that exceed the configured memory reserve
-and evicts the lowest predicted-reuse tensors.  In the transfer-pressured state
+and evicts the lowest predicted-reuse tensors.  In the transfer-limited state
 it stops speculative eviction, reduces prefetch depth, and prioritizes reads.
 In the coordination-dominated state it enables asynchronous prefetch and
 NUMA-local placement.  The objective is lexicographic: prevent allocation
@@ -229,7 +229,7 @@ and metadata occupies $O(n)$.  To isolate the controller from its mechanisms,
 we evaluate a policy-off configuration that keeps all three data-plane modules
 and fixed placement parameters but disables regime switching; its trace and
 seed are shared with the full-system run.  Disabling the policy forfeits the
-coordination-region behavior, so the system drifts toward the transfer-pressured
+coordination-region behavior, so the system drifts toward the transfer-limited
 boundary under burst load, consistent with the sustained-load results in
 Section~\ref{sec:results}; the paired per-run records are included in the
 artifact.  The measured 1.68~ms is mean controller work per serving request

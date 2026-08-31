@@ -128,7 +128,7 @@ scoped as GPU-only with a PDU rank cross-check.
    policy-off configuration (all modules on, regime switching off, paired
    trace/seed) isolates the controller from its mechanisms; the measured
    ablation (Table~\ref{tab:policy_off}) shows disabling the policy raises p99
-   latency by 18.6% and per-request energy by ~22%.
+   latency by 22.9% (671 ms to 825 ms) and per-request energy by 21.5%.
 7. **Implementation.** The GPU Booster is described as an LD_PRELOAD
    interception layer with a GDS direct path (staged fallback), 4 MB
    alignment, reuse-distance eviction, partial reload, and output-equivalence

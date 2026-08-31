@@ -1,16 +1,16 @@
 \section{Discussion, Limitations, and Future Work}\label{sec:discussion}
 
 \subsection{Regime Boundaries as Intrinsic System Transitions}
-A regime boundary, as we use the term, is just the point at which one term in the latency decomposition takes over from another. That sounds abstract; it is not.
-Capacity-limited execution leaves no room for locality to help, no matter how clever the coordination strategy.
-I/O-limited execution is a bandwidth ceiling, full stop. Once cross-tier traffic hits sustained storage bandwidth, orchestration adds latency rather than offsetting it.
-What is left in the middle---coordination-dominated execution, where compute, locality, transfer, and synchronization sit at comparable scale---is the only regime in which orchestration genuinely reshapes behavior. Outside that region, you are paying coordination overhead for nothing.
+A regime boundary, in our usage, is the operating point at which one term of the latency decomposition begins to dominate the others.
+In the capacity-limited regime, demand exceeds fast-tier capacity and locality cannot help regardless of the coordination strategy.
+In the transfer-limited regime, sustained storage bandwidth is the binding constraint: once cross-tier traffic saturates it, orchestration adds latency rather than offsetting it.
+Between the two lies the coordination-dominated regime, in which compute, locality, transfer, and synchronization are of comparable magnitude; this is the only regime in which orchestration materially reshapes behavior, and outside it the coordination overhead is not recovered.
 
 \subsection{Fundamental Limits and Inconsistent Prior Results}
-This regime view, we think, also tells a useful story about the literature.
-Hierarchical orchestration is not a universal win, and there is no implementation that makes it one.
-Sustained bandwidth is a hard ceiling that no amount of coordination breaks through. Highly irregular access patterns can erase the benefit on their own---once prediction and coordination cost more than selective transfer saves, the math just stops working out. Both failure modes are properties of multi-tier memory itself, not bugs anyone can fix.
-The same lens explains, we think, why offloading, swapping, and cache-centric papers are inconsistent with one another. They report large gains on some configurations and zero or negative returns on others. Read through the regime lens, what is happening is that those techniques implicitly assume the coordination-dominated regime; deployed outside that regime, physical constraints take over and overheads that used to be amortized show up on the bill.
+This regime view also clarifies apparent disagreements in the literature.
+Hierarchical orchestration is not a universal gain, and no implementation makes it one.
+Sustained bandwidth is a hard ceiling that coordination cannot exceed, and highly irregular access patterns can remove the benefit on their own: once prediction and coordination cost more than selective transfer saves, the net effect becomes negative. Both failure modes are intrinsic properties of multi-tier memory rather than implementation defects.
+The same lens explains why offloading, swapping, and cache-centric studies report inconsistent results---large gains in some configurations and zero or negative returns in others. Viewed through the regime model, those techniques implicitly assume the coordination-dominated regime; deployed outside it, physical constraints dominate and previously amortized overheads become visible.
 
 \subsection{RAMSES as an Experimental Embodiment}
 RAMSES is, in this sense, the regime view made operational.
@@ -44,7 +44,7 @@ In real industrial deployments, rack-level PDU or three-phase meters additionall
 \subsection{Limitations and Future Work}
 \label{sec:future_work}
 
-A few things we want to be honest about.
+We note several limitations explicitly.
 First, the evaluation is single-node. Multi-node and cross-fabric deployments---NVLink or InfiniBand clusters, for example---may introduce extra communication-induced regime shifts that we have not characterized here.
 Second, the 72-hour trace is synthetic and the available artifact lacks factory reference samples. We therefore withdraw distribution-fidelity claims; real traces may require a different arrival model and calibration procedure.
 Third, energy measurement integrates GPU (NVML) with CPU-package and DRAM (RAPL) on a shared clock, cross-validated against an external PDU (Kendall $\tau=1.0$). NVMe-rail power and facility-level overheads (cooling, PSU inefficiencies) are not captured, so absolute certified accounting remains future work.

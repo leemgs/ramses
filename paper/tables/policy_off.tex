@@ -2,7 +2,7 @@
 % Body rows: Configuration & P99 (ms) & P99.9 (ms) & Energy/req (J).
 \begin{table}[t]
 \centering
-\renewcommand{\arraystretch}{1.1}
+\renewcommand{\arraystretch}{1.0}
 \caption{Controller ablation: full RAMSES versus a policy-off configuration
 that retains all three data-plane modules but disables regime switching, run on
 the same trace and seed. \capinfo}
@@ -10,6 +10,7 @@ the same trace and seed. \capinfo}
 \IfFileExists{tables/policy_off_body.tex}
   {\def\generatedtablebody{\input{tables/policy_off_body.tex}}}
   {\def\generatedtablebody{\multicolumn{4}{c}{\emph{Generated from paired runs via \texttt{../code/make\_tables.py}.}}}}
+\footnotesize
 \begin{tabular}{lccc}
 \toprule
 \textbf{Configuration} & \textbf{P99} & \textbf{P99.9} & \textbf{Energy/req} \\

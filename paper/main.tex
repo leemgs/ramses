@@ -113,6 +113,33 @@
 \setlength{\abovecaptionskip}{0.60pt}
 \setlength{\belowcaptionskip}{0.60pt}
 
+%% ---- Space compaction for the 10-page limit (TII resubmission) ----
+\setlength{\floatsep}{3.0pt plus 1pt minus 1pt}
+\setlength{\intextsep}{3.0pt plus 1pt minus 1pt}
+\setlength{\dblfloatsep}{3.0pt plus 1pt minus 1pt}
+\setlength{\dbltextfloatsep}{4.0pt plus 1pt minus 1pt}
+\setlength{\abovedisplayskip}{3.0pt plus 1pt minus 1pt}
+\setlength{\belowdisplayskip}{3.0pt plus 1pt minus 1pt}
+\setlength{\abovedisplayshortskip}{1.0pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2.0pt plus 1pt}
+% Tighten all lists (itemize/enumerate/description)
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.25em,topsep=1.5pt,itemsep=1.5pt,parsep=0pt}
+% Compact bibliography (smaller font, tighter item spacing) for the 10-page limit
+\usepackage{etoolbox}
+\AtBeginEnvironment{thebibliography}{\scriptsize\setlength{\itemsep}{0pt plus 0.2pt}}
+% Let LaTeX pack more float area per page (less forced whitespace)
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.9}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.9}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{4}
+\setcounter{totalnumber}{10}
+\setcounter{dbltopnumber}{4}
+
 
 % How to print date, hour, and minute to maintain the current version of the paper.
 % Append the below statement in the 'abstract' section.
@@ -187,8 +214,9 @@
 \input{./section/085_conclusion.tex}
 
 \input{./section/090_ack.tex}
-\input{./section/095_reference.tex} 
-%-------- TII expects author biographies (see TII reference papers).
-\input{./section/099_bib.tex}
+\input{./section/095_reference.tex}
+%-------- Author biographies/photos are added at camera-ready (TII supplies them
+%-------- only on acceptance); omitted here to meet the 10-page review limit.
+%\input{./section/099_bib.tex}
 
 \end{document}

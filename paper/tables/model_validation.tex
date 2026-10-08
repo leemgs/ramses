@@ -2,7 +2,7 @@
 % Body rows: System & alpha & beta & MAE (ms) & RMSE (ms) & Prefetch hit rate.
 \begin{table}[t]
 \centering
-\renewcommand{\arraystretch}{1.1}
+\renewcommand{\arraystretch}{1.0}
 \caption{Operating-model validation: measured mean pressure ratios, prediction
 error of Eq.~\eqref{eq:latency_total} against end-to-end latency, and prefetch
 hit rate. \capinfo}
@@ -10,6 +10,7 @@ hit rate. \capinfo}
 \IfFileExists{tables/model_validation_body.tex}
   {\def\generatedtablebody{\input{tables/model_validation_body.tex}}}
   {\def\generatedtablebody{\multicolumn{6}{c}{\emph{Generated from measured counters via \texttt{../code/make\_tables.py}.}}}}
+\footnotesize
 \begin{tabular}{lccccc}
 \toprule
 \textbf{System} & $\boldsymbol{\alpha}$ & $\boldsymbol{\beta}$ & \textbf{MAE} & \textbf{RMSE} & \textbf{Prefetch} \\

@@ -12,34 +12,11 @@ Hierarchical orchestration is not a universal gain, and no implementation makes 
 Sustained bandwidth is a hard ceiling that coordination cannot exceed, and highly irregular access patterns can remove the benefit on their own: once prediction and coordination cost more than selective transfer saves, the net effect becomes negative. Both failure modes are intrinsic properties of multi-tier memory rather than implementation defects.
 The same lens explains why offloading, swapping, and cache-centric studies report inconsistent results---large gains in some configurations and zero or negative returns in others. Viewed through the regime model, those techniques implicitly assume the coordination-dominated regime; deployed outside it, physical constraints dominate and previously amortized overheads become visible.
 
-\subsection{RAMSES as an Experimental Embodiment}
-RAMSES is, in this sense, the regime view made operational.
-It treats VRAM, DRAM, and NVMe as one hierarchy and ties the gains we measured back to the four-term latency decomposition (compute, locality, transfer, synchronization).
-For deployment, RAMSES drops into PyTorch-based stacks via \texttt{LD\_PRELOAD} and configuration files---no application changes required---and can also be packaged as a lightweight container or sidecar~\cite{swapAdvisor2020,kwon2023pagedattention}.
-
 \subsection{What the Evidence Contributes}
-Preallocation, NUMA placement, asynchronous I/O, and eviction are not claimed
-as new in isolation. The research contribution is the explicit connection
-between observable dimensionless pressures, a reproducible regime-to-action
-mapping, and a counterfactual evaluation that seeks both positive and negative
-operating regions. A faster implementation alone would establish an engineering
-point result; agreement among the predicted boundary, policy-off ablation, and
-measured response instead supports an explanation of when coordination is
-worthwhile.
-
-That explanation is the transferable artifact. A new device, model, or storage
-tier need not inherit our numerical thresholds: it can measure its own capacity
-and transfer terms, locate its operating point, and test the same boundary
-prediction. Conversely, failure to reproduce the predicted ordering, or a
-benefit in a supposedly capacity- or bandwidth-limited region, would falsify
-the regime account rather than being dismissed as a tuning problem.
+RAMSES is the regime view made operational: it treats VRAM, DRAM, and NVMe as one hierarchy, ties the measured gains to the four-term latency decomposition, and drops into PyTorch stacks via \texttt{LD\_PRELOAD} with no application changes~\cite{swapAdvisor2020,kwon2023pagedattention}. Preallocation, NUMA placement, asynchronous I/O, and eviction are not new in isolation; the contribution is the explicit connection between observable dimensionless pressures, a reproducible regime-to-action mapping, and a counterfactual evaluation that seeks both positive and negative operating regions. The transferable artifact is that explanation: a new device, model, or storage tier can measure its own capacity and transfer terms, locate its operating point, and test the same boundary prediction; failure to reproduce the predicted ordering, or a benefit in a supposedly capacity- or transfer-limited region, would falsify the account rather than being dismissed as a tuning problem.
 
 \subsection{Generality and Energy Implications}
-The experiments here are on LLM and vision-model inference, but regime-dependent behavior is a general property of multi-tier memory.
-Anywhere working sets exceed fast-tier capacity and execution depends on cross-tier movement plus synchronization, the same regime transitions appear.
-On constrained industrial edge boxes---where $C_{\mathrm{VRAM}} \ll C_{\mathrm{DRAM}}$ (the GPU fast-tier is the binding constraint) or where secondary storage bandwidth is tight---you sit intrinsically near the capacity boundary ($\alpha \approx 1$) or the transfer boundary ($\beta \approx 1$), and instabilities amplify. That matches our observations.
-On energy: we measured synchronized whole-node energy (GPU via NVML plus CPU package and DRAM via RAPL).
-In real industrial deployments, rack-level PDU or three-phase meters additionally pick up NVMe-rail, cooling, and PSU loads, so certified absolute numbers will be higher. The relative energy--latency trade-offs that come from regime transitions, though, hold up~\cite{huang2019gpipe,stojkovic2025dynamollm}.
+Although the experiments target LLM and vision-model inference, regime-dependent behavior is a general property of multi-tier memory: wherever working sets exceed fast-tier capacity and execution depends on cross-tier movement plus synchronization, the same transitions appear. Constrained industrial edge boxes---where $C_{\mathrm{VRAM}}\ll C_{\mathrm{DRAM}}$ or storage bandwidth is tight---sit near the capacity ($\alpha\approx1$) or transfer ($\beta\approx1$) boundary, where instabilities amplify, matching our observations. We report synchronized whole-node energy (GPU NVML plus CPU-package and DRAM RAPL); rack-level PDU or three-phase meters additionally capture NVMe-rail, cooling, and PSU loads, so certified absolute numbers would be higher, but the relative energy--latency trade-offs from regime transitions hold~\cite{huang2019gpipe,stojkovic2025dynamollm}.
 
 \subsection{Limitations and Future Work}
 \label{sec:future_work}

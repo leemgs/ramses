@@ -2,7 +2,7 @@
 % Body rows: Metric & Default & RAMSES.
 \begin{table}[t]
 \centering
-\renewcommand{\arraystretch}{1.1}
+\renewcommand{\arraystretch}{1.0}
 \caption{72-hour QoS time series under the parameterized synthetic arrival
 trace: per-minute metrics summarized over 4{,}320 records per system. These are
 request-level QoS/reliability indicators, not functional-safety evidence.}
@@ -10,6 +10,7 @@ request-level QoS/reliability indicators, not functional-safety evidence.}
 \IfFileExists{tables/qos_body.tex}
   {\def\generatedtablebody{\input{tables/qos_body.tex}}}
   {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from the 72-hour series via \texttt{code/make\_tables.py}.}}}}
+\footnotesize
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Default} & \textbf{RAMSES} \\

@@ -1,21 +1,13 @@
 
 \section{Background and Related Work}\label{sec:background}
 
-The relevant prior work falls into three buckets, and we walk through them in that order: system-level optimizations, model-level optimizations, and the empirical observations from production-style profiling that ended up shaping RAMSES~\cite{swapAdvisor2020,miao2025survey,li2024llmserving,liu2025survey}.
+Prior work falls into system-level optimizations, model-level optimizations, and the empirical observations that shaped RAMSES~\cite{swapAdvisor2020,miao2025survey,li2024llmserving,liu2025survey}.
 
 \subsection{System-Level Optimization}
-On the system side, the targets are the obvious ones---hardware bottlenecks and Operating System (OS) overhead.
-In-memory file systems like \texttt{RAMFS} or \texttt{tmpfs}, paired with direct I/O, cut model load time~\cite{chen2023cpugpu,beaumont2020optimal}.
-DeepSpeed and ZeRO-Offload spread parameters across devices to relieve VRAM pressure~\cite{aminabadi2022deepspeed,stojkovic2025dynamollm}.
-Lower in the stack, OS-level knobs do real work: \texttt{jemalloc} heap allocation, slab allocators, \texttt{buffer\_head} tuning---small things individually, but they reduce hidden allocation costs that profilers tend to miss~\cite{hunter2021hugepage,yang2023numalloc,milic2017socket}.
-Two more lines of work deserve a separate mention because they map onto what RAMSES eventually has to do: NUMA-aware scheduling~\cite{li2024llmserving,du2025prefillonly}, and CPU--GPU offloading~\cite{jiang2024neo,zhuge2025specoffload,sarkar2023edgemoe,wang2020offloading}. Both improve utilization once memory gets tight.
+System-side work targets hardware bottlenecks and OS overhead. In-memory file systems (\texttt{RAMFS}, \texttt{tmpfs}) with direct I/O cut model-load time~\cite{chen2023cpugpu,beaumont2020optimal}; DeepSpeed and ZeRO-Offload spread parameters across devices to relieve VRAM pressure~\cite{aminabadi2022deepspeed,stojkovic2025dynamollm}; and OS-level allocators (\texttt{jemalloc}, slab, \texttt{buffer\_head} tuning) reduce hidden allocation costs~\cite{hunter2021hugepage,yang2023numalloc,milic2017socket}. Closest to RAMSES are NUMA-aware scheduling~\cite{li2024llmserving,du2025prefillonly} and CPU--GPU offloading~\cite{jiang2024neo,zhuge2025specoffload,sarkar2023edgemoe,wang2020offloading}, which improve utilization once memory is tight.
 
 \subsection{Model-Level Optimization}
-The model-side toolkit is, by now, well established.
-Quantization, pruning, LUT-based replacement: smaller compute footprint, smaller memory footprint~\cite{frantar2023sparsegpt,korthikanti2023reducing}.
-Mixed precision (FP16--FP32) lowers GPU memory pressure while keeping convergence quality intact~\cite{huang2019gpipe}.
-Multi-GPU parallelism, FlashAttention, newer schedulers all help raw throughput~\cite{dao2022flashattention,du2025prefillonly,yu2022orca}.
-Speculative execution and CPU-pooling cut redundant work and improve bandwidth utilization~\cite{xu2024pie,li2025multillm}.
+Model-side techniques are well established: quantization, pruning, and LUT replacement shrink compute and memory footprints~\cite{frantar2023sparsegpt,korthikanti2023reducing}; mixed precision (FP16--FP32) lowers GPU memory pressure~\cite{huang2019gpipe}; multi-GPU parallelism, FlashAttention, and newer schedulers raise throughput~\cite{dao2022flashattention,du2025prefillonly,yu2022orca}; and speculative execution with CPU pooling cut redundant work~\cite{xu2024pie,li2025multillm}.
 
 \subsection{Key Empirical Observations}
 \label{sec:observations}

@@ -1,57 +1,25 @@
 \section{Evaluation}\label{sec:results}
 
-This section reports a quantitative evaluation of \textbf{RAMSES} relative to existing approaches.
-Every experiment is run five times under the same hardware setup. Tables report
-absolute request-level percentiles and run-level means with 95\% confidence
-intervals; standard deviations remain available in the artifact.
-All request-level latency, whole-node energy, operating-model, controller-ablation,
-and per-model results are computed by the released scripts from
-\texttt{code/data/actual/raw.jsonl}---16{,}000 request-level records spanning
-eight serving configurations, five models, four task types, and five
-restarts---so each such value traces back to primary measurements rather than to
-normalized plots. The named-industrial-task accuracy, the parameter-sensitivity sweep, the
-model-load time and peak-VRAM measurements
-(Table~\ref{tab:loadtime_vram}), and the 72-hour arrival-trace QoS series
-(Table~\ref{tab:qos}) are likewise released as measured CSVs under
-\texttt{code/data/actual/}.
-Raw per-run observations, the request-level logs, and the analysis scripts that compute confidence intervals and significance tests are provided in the review artifact so that every summary in this section can be recomputed from primary data.
+We evaluate RAMSES against existing serving stacks. Every experiment runs five times on the same hardware; tables report absolute request-level percentiles and run-level means with 95\% confidence intervals. All request-level latency, whole-node energy, operating-model, controller-ablation, and per-model results are computed by the released scripts from \texttt{code/data/actual/raw.jsonl}---16{,}000 records over eight configurations, five models, four task types, and five restarts---and the load-time/VRAM (Table~\ref{tab:loadtime_vram}), sensitivity, industrial-accuracy, and 72-hour QoS (Table~\ref{tab:qos}) series are released as measured CSVs, so every summary traces back to primary data rather than normalized plots.
 
 \subsection{Research Questions and Claim--Evidence Alignment}
 We organize the evaluation around four questions tied directly to the
 contributions in Section~\ref{sec:introduction}:
 \begin{description}
-\item[RQ1: Predictive validity.] Do measured pressure ratios distinguish the
-three regimes, and how accurately does the latency model predict held-out
-request latency? We report operating-point coverage, MAE/RMSE, and residuals.
-\item[RQ2: Value of switching.] Does measured-state switching add value beyond
-the same preallocation, NUMA, and transfer mechanisms at fixed settings? The
-same-trace \texttt{ramses\_policy\_off} run is the counterfactual, and parameter
-sweeps test dependence on a single chosen threshold.
-\item[RQ3: Benefit boundary.] Where does RAMSES improve latency, memory,
-failures, and whole-node energy, and where does its overhead cease to pay? We retain
-non-gains and report absolute P50--P99.9 latency and failure denominators.
-\item[RQ4: Semantic preservation.] Does relocation preserve model outputs and
-named-task accuracy? Baseline/RAMSES outputs are paired on identical inputs; no
-accuracy value is inferred from a latency experiment.
+\item[RQ1: Predictive validity.] Do measured pressure ratios distinguish the regimes, and how accurately does the model predict held-out latency (coverage, MAE/RMSE)?
+\item[RQ2: Value of switching.] Does state switching add value beyond the same mechanisms at fixed settings? The same-trace policy-off run is the counterfactual.
+\item[RQ3: Benefit boundary.] Where does RAMSES improve latency, memory, failures, and energy, and where does its overhead cease to pay? We retain non-gains.
+\item[RQ4: Semantic preservation.] Does relocation preserve outputs and named-task accuracy, paired on identical inputs?
 \end{description}
 
-Synthetic values under \texttt{code/data/expected/} are pre-experiment
-hypotheses used only to size the matrix and exercise the pipeline. They are
-excluded from every paper table, figure, statistical test, and claim. A result
-enters this section only when request-level measurement provenance exists under
-\texttt{code/data/actual/}; unsupported configurations remain explicitly
-missing rather than being filled from an expectation.
+Values under \texttt{code/data/expected/} are pre-experiment hypotheses used only to size the matrix; they are excluded from every table, figure, test, and claim, and unsupported configurations remain explicitly missing.
 
 \noindent\textbf{Testbed.}
 Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
 two NVIDIA A100 (80GB) GPUs, an Intel Xeon Gold 6440 CPU (40 cores),
 512~GB ECC DRAM, and a Gen4 NVMe SSD running PyTorch~2.4, CUDA~12.2,
-and vLLM~0.5.3. Because vLLM~0.5.3 predates native Llama-4 support, we applied a compatibility patch that registers the Llama-4 model class and adapts the configuration and weight loaders; the patch and the exact invocation are included in the review artifact so the comparisons are reproducible. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. The machine has
-redundant power, ECC protection, and sustained-load thermal control,
-which is what 24/7 industrial operation actually looks like.
-Single-GPU ablations are flagged explicitly as ``1$\times$A100''.
+and vLLM~0.5.3. Because vLLM~0.5.3 predates native Llama-4 support, we applied a compatibility patch that registers the Llama-4 model class and adapts the configuration and weight loaders; the patch and the exact invocation are included in the review artifact so the comparisons are reproducible. The principal workload is Llama-4 (Maverick-17B-128E-Instruct)~\cite{meta2025llama4}. Single-GPU ablations are flagged as ``1$\times$A100''.
 
-For comparison we use the standards---FlexGen \cite{sheng2023flexgen} and SwapAdvisor \cite{swapAdvisor2020}---together with newer entries: NEO \cite{jiang2024neo}, SpecOffload \cite{zhuge2025specoffload}, and vLLM \cite{kwon2023pagedattention}.
 Table~\ref{tab:baseline_comparison} captures the comparison scope.
 
 % =====================================================
@@ -114,80 +82,51 @@ schema, collector, and analysis programs are included under \texttt{code/}, and
 the raw per-request energy is in \texttt{code/data/actual/raw.jsonl}.  NVMe rail
 power and certified rack-level absolute accuracy (IEC~62053) remain future work.
 
-\subsection{Experimental probes across memory-dominated regimes}
+\noindent\textbf{Metrics.} The evaluation reports model-load time; inference latency (TTFT and sustained throughput); memory-utilization efficiency (VRAM/DRAM occupancy and fragmentation $=1-\mathrm{largest\_free\_block}/\mathrm{total\_free}$); and system stability (VRAM overflows and GPU restarts under sustained load).
 
-Four metrics drive the evaluation:
-(1) \textbf{model loading time};
-(2) \textbf{inference latency}, captured as Time-To-First-Token (TTFT) and sustained throughput;
-(3) \textbf{memory utilization efficiency}, expressed as VRAM/DRAM occupancy and fragmentation, where fragmentation $= 1-\mathrm{largest\_free\_block}/\mathrm{total\_free}$; and
-(4) \textbf{system stability}, i.e., VRAM overflows and GPU restarts under sustained load.
+\noindent\textbf{Baselines.} The evaluated baselines are memory-centric and cross-tier serving systems: the PyTorch default, PagedAttention/vLLM~\cite{kwon2023pagedattention}, FlexGen~\cite{sheng2023flexgen}, SwapAdvisor~\cite{swapAdvisor2020}, and the recent cross-tier offloading methods NEO~\cite{jiang2024neo} and SpecOffload~\cite{zhuge2025specoffload}; with RAMSES and its policy-off variant these form the eight serving configurations reported here. Orca's continuous-batching scheduler~\cite{yu2022orca} is discussed as related work but not benchmarked, as it targets request scheduling rather than the VRAM--DRAM--NVMe path RAMSES addresses.
+
 
 % =====================================================
 
-\subsection{Baseline selection across heterogeneous orchestration regimes}
-The evaluated baselines are memory-centric and cross-tier serving systems: the PyTorch default, PagedAttention/vLLM~\cite{kwon2023pagedattention}, FlexGen~\cite{sheng2023flexgen}, SwapAdvisor~\cite{swapAdvisor2020}, and the more recent cross-tier offloading methods NEO~\cite{jiang2024neo} and SpecOffload~\cite{zhuge2025specoffload}. With RAMSES and its policy-off variant these form the eight serving configurations reported throughout this section.
-Orca's continuous-batching scheduler~\cite{yu2022orca} is discussed as related work but is not benchmarked here, because it targets request scheduling rather than the VRAM--DRAM--NVMe memory path that RAMSES addresses.
-Selection criteria favor architectural diversity and direct relevance to regime-aware coordination.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.99\linewidth]{figures/rameses_consolidated.png}
-\caption{Consolidated experimental results across baselines and RAMSES on Llama-4 17B. All bars are normalized to the PyTorch \emph{Default} baseline (=100\%), where (a)~load time, (b)~peak VRAM usage, and (c)~end-to-end inference latency are reported as percentages---lower is better. (d)~Failures are absolute counts of VRAM overflows and GPU restarts observed during a 72-hour sustained run (numerical labels above the bars). The RAMSES column (rightmost, highlighted) achieves the lowest load time, latency, and failure count across all configurations.}
-\label{fig:rameses_consolidated}
-\end{figure}
-
-% =====================================================
-
-\subsection{Regime-dependent performance characteristics}
-Below we walk through RAMSES across the analytically defined operating regimes, showing how regime-aware coordination translates into performance, stability, and reliability gains.
-\subsubsection{Capacity-limited regime: model initialization under memory pressure}
-
-On Llama-4 17B, RAMSES cuts mean model-load time by 59.9\% relative to PyTorch (38.5~s to 15.4~s; Table~\ref{tab:loadtime_vram}), averaged over 2{,}000 requests.
+\subsection{Regime-dependent performance}
+\noindent\textbf{Capacity-limited regime (model initialization).} On Llama-4 17B, RAMSES cuts mean model-load time by 59.9\% relative to PyTorch (38.5~s to 15.4~s; Table~\ref{tab:loadtime_vram}), averaged over 2{,}000 requests.
 Against FlexGen, SwapAdvisor, NEO, SpecOffload, and vLLM the reduction is 56.0\%, 53.4\%, 51.2\%, 48.7\%, and 44.4\%, respectively.
 The source of these gains is twofold: CUDA context initialization no longer happens on the critical path, and NVMe--VRAM transfers are tuned.
 
 \input{tables/loadtime_vram.tex}
 
-\subsubsection{Locality and fragmentation analysis}
-
-Fig.~\ref{fig:rameses_consolidated}(b) shows that the \textit{jemalloc}-based DRAM optimization in RAMSES cuts host-side heap fragmentation and allocation churn.
+\noindent\textbf{Locality and fragmentation.} The \textit{jemalloc}-based DRAM optimization cuts host-side heap fragmentation and allocation churn.
 On the VRAM side, the gains come from CUDA allocator tuning combined with selective GPU swapping, lowering mean peak VRAM by 15.1\% (29.2~GB to 24.8~GB; Table~\ref{tab:loadtime_vram}).
 Inference failure rate stays under 0.5\% across configurations.
 
-\subsubsection{Coordination-dominated regime: latency reduction beyond raw capacity}
-
-On the principal Llama-4 17B TTFT workload, RAMSES cuts median latency by 35.4\% (871.6~ms to 563.0~ms) and raises token throughput by 61\% relative to PyTorch (Table~\ref{tab:latency_percentiles}; all records at batch~1).
+\noindent\textbf{Coordination-dominated regime (latency).} On the principal Llama-4 17B TTFT workload, RAMSES cuts median latency by 35.4\% (871.6~ms to 563.0~ms) and raises token throughput by 61\% relative to PyTorch (Table~\ref{tab:latency_percentiles}; all records at batch~1).
 Against the competing serving stacks the median-latency reduction ranges from about 5\% over vLLM to 29\% over FlexGen, confirming that cross-tier coordination reshapes end-to-end latency rather than merely freeing capacity.
 
-\subsubsection{Stability collapse and recovery across regime boundaries}
-
-Fig.~\ref{fig:rameses_consolidated}(d) summarizes a continuous 72-hour stress test. RAMSES shows zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures. The full 72-hour time series is released with the artifact; we report the failure counts as a reliability indicator and do not claim statistical stationarity or a causal mechanism from these counts alone.
+\noindent\textbf{Stability under sustained load.} A continuous 72-hour stress test shows RAMSES with zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures (Table~\ref{tab:qos}). The full 72-hour time series is released with the artifact; we report the failure counts as a reliability indicator and do not claim statistical stationarity or a causal mechanism from these counts alone.
 
 % =====================================================
-\subsubsection{Long-Duration QoS under a Parameterized Synthetic Trace}
-The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  Over 4{,}320 one-minute records per system, RAMSES records a 0.60\% miss fraction (26 violations) versus 8.70\% (376 violations) for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  Mean p99 latency drift is 0.97\% versus 5.07\% for the reference, with no observed CUDA restart in this finite run (Table~\ref{tab:qos}).
+\noindent\textbf{Long-duration QoS.} The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  Over 4{,}320 one-minute records per system, RAMSES records a 0.60\% miss fraction (26 violations) versus 8.70\% (376 violations) for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  Mean p99 latency drift is 0.97\% versus 5.07\% for the reference, with no observed CUDA restart in this finite run (Table~\ref{tab:qos}).
 
 % =====================================================
 \subsection{Multi-GPU Scope}
-The contribution and all primary comparisons are scoped to one serving node.  Two-GPU measurements use tensor placement within that node.  We do not claim 4/8-GPU or fleet-level generality because the available data do not include fabric saturation, link or device failure injection, recovery time, or communication-tail analysis.
+All primary comparisons are scoped to one serving node; two-GPU measurements use intra-node tensor placement. We do not claim 4/8-GPU or fleet generality, as the data lack fabric saturation, failure injection, recovery time, and communication-tail analysis.
 
 % =====================================================
 \subsection{Regime invariance across model architectures}
 
 Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down inference latency by 34--41\% in every configuration we tried (mean 38.9\%), and loading time by 50--59\%.
-Each configuration was run five times; the per-run observations and Student-$t$ confidence intervals are provided in \texttt{code/data/actual/stats.csv}. Generalization beyond these five architectures is not claimed and remains to be established on further model families.
+Per-run observations and Student-$t$ intervals are in \texttt{code/data/actual/stats.csv}; generalization beyond these five architectures is not claimed.
 
 % =====================================================
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/energy_latency_pareto.png}
+\includegraphics[width=0.68\linewidth]{figures/energy_latency_pareto.png}
 \caption{Energy--latency tradeoff under varying batch sizes. Each gray marker is one (energy, latency) operating point from a baseline serving stack (FlexGen, SwapAdvisor, NEO, SpecOffload, vLLM, and the PyTorch \emph{Default}) measured across the batch-size sweep, and the green curve is the convex hull of RAMSES operating points over the same sweep. RAMSES dominates the baseline cloud in both axes simultaneously---lower latency at equal or lower energy per inference---shifting the achievable energy--latency frontier inward.}
 \label{fig:energy_latency}
 \end{figure}
 
 \subsection{Energy--Latency Coupling and Regime-Aware Efficiency}
-
-Energy is reported jointly with latency, since the two are coupled by hierarchical memory coordination and that coupling is what we want to characterize.
 
 \textbf{Measurement Methodology.}
 Whole-node energy was integrated per request from GPU (NVML) and CPU-package and
@@ -222,52 +161,18 @@ with $E_{\text{token}}$ giving Joules per generated token,
 $E_{\text{inf}}$ Joules per inference request,
 and the energy--delay product (EDP) capturing the energy--latency trade-off jointly.
 
-\textbf{Results.}
-Measured across the whole node and averaged over all configurations, RAMSES drops energy per token by 46.7\% and
-energy per inference by 46.7\% relative to PyTorch, and the energy--delay product
-by 69.6\%---latency and energy fall together rather than trading off (Table~\ref{tab:energy} lists the absolute principal-workload values). Because
-energy per token drops while token throughput rises by 61\%, whole-node
-throughput-per-watt improves by roughly 88\%; it also exceeds every other
-baseline, consistent with the energy--latency frontier. Table~\ref{tab:energy}
-reports the absolute per-request and per-token energy, EDP, and throughput for
-the principal workload, integrated across GPU, CPU, and DRAM. For that single
-principal workload the tabulated values correspond to a 42.8\% per-inference
-energy reduction, a 63.1\% EDP reduction, and a 56\% throughput-per-watt gain
-relative to PyTorch; the higher headline percentages above are the means across
-all eight evaluated configurations, and both are recomputed from the released
-per-request energy logs.
+\textbf{Results.} Averaged over all eight configurations, RAMSES drops whole-node energy per token and per inference by 46.7\% and the EDP by 69.6\% relative to PyTorch, while token throughput rises 61\% (throughput-per-watt ${\approx}{+}88\%$), exceeding every baseline. For the single principal workload, Table~\ref{tab:energy} gives the absolute per-request/per-token energy, EDP, and throughput (integrated across GPU, CPU, and DRAM), corresponding to 42.8\% energy, 63.1\% EDP, and 56\% throughput-per-watt improvements; all values are recomputed from the released per-request logs.
 
 \input{tables/energy.tex}
 
-\textbf{Energy--Latency Tradeoff.}
-Fig.~\ref{fig:energy_latency} makes the shape of the trade-off concrete. As batch size and swap intensity vary, baselines trace a convex energy--latency curve: once latency creeps toward the I/O saturation boundary ($\beta \to 1$), synchronization stalls drive both runtime and dynamic power up at the same time.
-RAMSES shifts the achievable energy--latency frontier inward---lower latency at the same or lower energy. The mechanism is simple to describe: regime-aware coordination keeps the system away from the regime where swap oscillation and context reinitialization amplify energy.
-
-Measured across the whole node (GPU, CPU, and DRAM), RAMSES lowers per-inference energy under the tested power settings. That property matters in industrial deployments, where operating expenditure and power-envelope compliance bound how far a system can scale.
+\textbf{Energy--latency tradeoff.} Fig.~\ref{fig:energy_latency} shows baselines tracing a convex energy--latency curve: as latency approaches the I/O-saturation boundary ($\beta\to1$), synchronization stalls raise both runtime and dynamic power. RAMSES shifts the achievable frontier inward---lower latency at equal or lower energy---by keeping the system out of the regime where swap oscillation and context reinitialization amplify energy, which bounds operating expenditure and power-envelope compliance in industrial deployments.
 % =====================================================
 
 \subsection{Industrial Trace-Based Edge--Central Evaluation}
 \label{edge-central-eval}
 
-\textbf{Trace Synthesis Methodology.}
-We use a 72-hour parameterized synthetic request schedule as a repeatable
-stress input.  It combines a nominal 10~ms arrival cadence, bounded jitter,
-independent burst injection, and a configurable concurrency level.  These
-choices are workload-generator parameters rather than measurements from a PLC,
-TSN schedule, factory log, sensor stream, or industrial-vision benchmark.  The
-schedule is intended to exercise sustained allocation and transfer behavior;
-it is not evidence that the evaluated inference completes within a control
-cycle.
-
-\textbf{Reproducibility and fidelity limits.}
-The included generator exposes the nominal 10~ms cadence, jitter model,
-burst probability, concurrency range, and random seed, so the exact 72-hour
-schedule can be regenerated deterministically.  It is parameterized rather than
-fitted to a proprietary factory log, and we therefore make no distributional-
-fidelity claim: a synthetic schedule cannot by itself establish field
-representativeness.  Operating-point coverage is computed from the transfer
-counters measured during each run rather than assumed from the arrival
-parameters.
+\textbf{Trace synthesis and reproducibility.}
+The 72-hour input is a parameterized synthetic request schedule---nominal 10~ms arrival cadence, bounded jitter, independent burst injection, configurable concurrency, and a published seed---so it regenerates deterministically. These are generator parameters, not measurements from a PLC, TSN schedule, factory log, sensor stream, or vision benchmark; it exercises sustained allocation and transfer behavior but is not evidence that inference completes within a control cycle, and we make no distributional-fidelity claim. Operating-point coverage is computed from the transfer counters measured during each run rather than assumed from the arrival parameters.
 
 Under this trace, RAMSES drops mean p99 latency by 37.5\% (546.4~ms to 341.3~ms), cuts
 p99 drift from 5.07\% to 0.97\%, and brings SLA violations from 8.70\% down to 0.60\%.
@@ -275,13 +180,7 @@ Baselines exhibit superlinear latency growth as $\beta \to 1$;
 RAMSES stays in coordination-dominated behavior for
 $0.6 < \beta < 0.9$.
 
-To look at hardware-level dynamics on the constrained side, we sampled VRAM usage, DRAM footprint, NVMe bandwidth utilization, and CPU load at 200\,ms granularity.
-Baseline VRAM occupancy fluctuates and bursts into swap when $\beta \approx 1$: mean VRAM variance is 2.85~GB$^2$, whereas RAMSES holds it to 0.74~GB$^2$ and the cascading swap spikes never appear.
-
-NVMe throughput in baseline configurations reaches high sustained saturation (mean 74.9\%, up to 87.9\% of peak bandwidth) during burst intervals; under RAMSES it averages 50.8\% (up to 63.9\%), so queue depth does not blow up.
-The mean swap-burst rate drops from 33.8~MB/s to 10.2~MB/s.
-
-CPU utilization on NUMA-bound cores averages 78.1\% in baselines because of reactive page reclaim and I/O polling; RAMSES holds mean CPU load to 61.0\%, which matters in resource-constrained edge boxes.
+Sampling VRAM, DRAM footprint, NVMe utilization, and CPU load at 200~ms granularity (Table~\ref{tab:qos}) exposes the mechanism: near $\beta\approx1$ baseline VRAM occupancy bursts into swap (variance 2.85 vs 0.74~GB$^2$), NVMe saturates (mean 74.9\%, peak 87.9\%, vs 50.8\%/63.9\%), the swap-burst rate falls from 33.8 to 10.2~MB/s, and NUMA-core CPU load drops from 78.1\% to 61.0\%, so queue depth and page-reclaim pressure stay bounded.
 
 \input{tables/qos.tex}
 
@@ -322,21 +221,10 @@ so the measured system gains carry no accuracy penalty. Table~\ref{tab:industria
 summarizes the dataset, model, accuracy, and equivalence results, and the
 evaluation harness is released as \texttt{../code/eval\_industrial.py}.
 
-The task result is logically separate from the synthetic arrival-trace study:
-the former tests semantic preservation on named dataset items, whereas the
-latter stresses resource coordination. Dataset version, official split,
-preprocessing, sample count, precision, tolerance, and failed-item denominator
-must accompany each populated row. If those provenance fields or measured
-outputs are absent, the row is omitted and no preservation claim is made.
+This task tests semantic preservation on named dataset items, separately from the synthetic-trace study; each populated row carries its dataset version, split, preprocessing, sample count, precision, tolerance, and failed-item denominator, and rows lacking provenance are omitted.
 
 \input{tables/industrial_accuracy.tex}
 
 % =====================================================
 \subsection{Orchestration Overhead Analysis}
-We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms, aggregating metric sampling, regime classification, and policy application (admission, prefetch, and eviction decisions); the per-component breakdown is released with the artifact. Against the measured PyTorch median end-to-end latency of 871.6\,ms (Table~\ref{tab:latency_percentiles}) this is:
-\begin{equation}\label{eq:overhead}
-\frac{1.68}{871.6} \approx 0.19\%.
-\end{equation}
-Worst-case across all evaluated configurations, the overhead remains
-under 3.8\% of total inference latency.
-This overhead is small relative to the sub-second workload but is workload dependent. It must not be compared with, or used to support, a 2~ms deadline.
+We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms, aggregating metric sampling, regime classification, and policy application (admission, prefetch, and eviction decisions); the per-component breakdown is released with the artifact. Against the measured PyTorch median end-to-end latency of 871.6\,ms (Table~\ref{tab:latency_percentiles}) this is $1.68/871.6\approx0.19\%$, and worst-case across all evaluated configurations it remains under 3.8\% of total inference latency. This overhead is small relative to the sub-second workload but workload dependent, and must not be compared with or used to support a 2~ms deadline.

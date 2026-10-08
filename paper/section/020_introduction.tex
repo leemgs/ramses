@@ -14,25 +14,10 @@ and the evaluation tests both the benefit and its predicted boundary.
 
 The contributions are:
 \begin{itemize}
-\item \emph{A falsifiable operating model.} The model separates resident demand
-from actual bidirectional traffic and accounts for overlap, queueing, reuse, and
-synchronization. Two dimensionless pressures predict a coordination-dominated
-region and capacity- and transfer-limited regions where RAMSES should provide
-little or negative benefit.
-\item \emph{A regime-to-action controller.} RAMSES maps those observable
-pressures to admission, prefetch, and eviction actions using a specified
-200~ms sampling interval, 5\% hysteresis, and three-sample switching rule. This
-mapping, rather than its component mechanisms in isolation, is tested by the
-policy-off ablation.
-\item \emph{A deployable single-node realization.} GPU preallocation, NUMA-local
-host allocation, and asynchronous block-aligned transfer are combined behind
-an \texttt{LD\_PRELOAD} layer for unmodified PyTorch applications. We do not
-claim a hardened GPUDirect Storage or multi-node data path.
-\item \emph{Boundary-seeking empirical evidence.} The evaluation crosses models
-and pressure regimes, includes a controller-disabled counterfactual and
-parameter sweeps, and reports absolute tails, uncertainty, failures, and
-synchronized whole-node (GPU, CPU, DRAM) energy. Reported maxima are
-configuration-specific effects, not guarantees.
+\item \emph{A falsifiable operating model} that separates resident demand from actual bidirectional traffic and accounts for overlap, queueing, reuse, and synchronization; two dimensionless pressures predict a coordination-dominated region and capacity- and transfer-limited regions where RAMSES should provide little or negative benefit.
+\item \emph{A regime-to-action controller} mapping those observable pressures to admission, prefetch, and eviction actions (200~ms sampling, 5\% hysteresis, three-sample switching); this mapping, not its mechanisms in isolation, is tested by the policy-off ablation.
+\item \emph{A deployable single-node realization} combining GPU preallocation, NUMA-local host allocation, and asynchronous block-aligned transfer behind an \texttt{LD\_PRELOAD} layer for unmodified PyTorch, with no hardened GPUDirect Storage or multi-node path claimed.
+\item \emph{Boundary-seeking empirical evidence}: the evaluation crosses models and regimes, includes a controller-disabled counterfactual and parameter sweeps, and reports absolute tails, uncertainty, failures, and synchronized whole-node (GPU, CPU, DRAM) energy.
 \end{itemize}
 
 The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.

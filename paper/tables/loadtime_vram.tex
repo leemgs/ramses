@@ -2,7 +2,7 @@
 % Body rows: System & Load-time (s) & Peak VRAM (GB).
 \begin{table}[t]
 \centering
-\renewcommand{\arraystretch}{1.1}
+\renewcommand{\arraystretch}{1.0}
 \caption{Measured model-load time and peak VRAM per system (mean over 2{,}000
 requests each) on the Llama-4 17B workload. RAMSES reduces mean load time by
 59.9\% and peak VRAM by 15.1\% relative to PyTorch. \capinfo}
@@ -10,6 +10,7 @@ requests each) on the Llama-4 17B workload. RAMSES reduces mean load time by
 \IfFileExists{tables/loadtime_vram_body.tex}
   {\def\generatedtablebody{\input{tables/loadtime_vram_body.tex}}}
   {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from raw measurements via \texttt{code/make\_tables.py}.}}}}
+\footnotesize
 \begin{tabular}{lcc}
 \toprule
 \textbf{System} & \textbf{Load-time (s)} & \textbf{Peak VRAM (GB)} \\

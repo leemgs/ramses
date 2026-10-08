@@ -1,7 +1,7 @@
  
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/rameses_design.png}
+\includegraphics[width=0.72\linewidth]{figures/rameses_design.png}
 \caption{Industrial hierarchical memory architecture of RAMSES
 for laboratory workloads motivated by industrial analytics.
 The data plane (solid arrows) coordinates GPU VRAM, host DRAM,
@@ -26,143 +26,86 @@ The diagram supplies workload motivation only; it does not depict a deployed con
 \section{RAMSES: Architecture and Key Components}\label{sec:mball}
 \footnotetext[1]{The anonymized review artifact bundles the \texttt{LD\_PRELOAD} orchestrator layer, the synthetic-trace generator, baseline invocation scripts, the request-level measurement schema, and the analysis programs used to produce the reported results.}
 
-LLM inference relies on tight cooperation across a heterogeneous set of resources: GPUs, VRAM, DRAM, NVMe, and Central Processing Units (CPUs). Existing serving stacks and runtimes do not handle resource contention as a first-class concern, which is why we keep seeing the same failure modes: Compute Unified Device Architecture (CUDA) out-of-memory (OOM) errors, context-switch stalls, and memory-mapping overhead. Earlier attempts to plug these gaps include GPU--CPU offloading~\cite{xu2025ellm}, speculative offloading~\cite{zhuge2025specoffload}, and cache-centric management~\cite{jiang2024neo}. Useful as those are, most stop at single-tier transfers (typically VRAM--CPU) or address only narrow scenarios such as key-value (KV) cache management.
+LLM inference couples GPUs, VRAM, DRAM, NVMe, and Central Processing Units (CPUs), yet serving stacks rarely treat resource contention as first-class, producing recurring Compute Unified Device Architecture (CUDA) out-of-memory (OOM) errors, context-switch stalls, and memory-mapping overhead. Prior GPU--CPU offloading~\cite{xu2025ellm}, speculative offloading~\cite{zhuge2025specoffload}, and cache-centric management~\cite{jiang2024neo} mostly stop at single-tier (VRAM--CPU) transfers or narrow scenarios such as key-value (KV) cache management.
 
-We propose \textbf{RAMSES} as a way past these limits. The design borrows the OS notion of memory ballooning and applies it to LLM serving. What separates RAMSES from prior work is that it manages the whole VRAM--DRAM--NVMe hierarchy together: GPU context conflicts, NUMA-induced latency, and inefficient swapping are addressed in the same control loop instead of patched independently. RAMSES also reallocates GPU and system memory on the fly, while staying lightweight enough to avoid the deployment burden of full distributed-processing frameworks. Three modules sit at the core of the design---the \textbf{GPU Process Allocator}, the \textbf{Task Memory Manager}, and the \textbf{GPU Booster with swap support}---and they are illustrated in Fig.~\ref{fig:rameses_architecture}.
+\textbf{RAMSES} applies the OS notion of memory ballooning to LLM serving, managing the whole VRAM--DRAM--NVMe hierarchy in one control loop---GPU context conflicts, NUMA-induced latency, and inefficient swapping addressed together rather than patched independently---while staying lightweight enough to avoid a full distributed framework. Three modules form the core---the \textbf{GPU Process Allocator}, the \textbf{Task Memory Manager}, and the \textbf{GPU Booster with swap support}---illustrated in Fig.~\ref{fig:rameses_architecture}.
 
 \subsection{GPU Process Allocator}
 In multi-model serving, two bottlenecks dominate: \textbf{GPU context loading conflicts} and \textbf{VRAM interference}. CUDA drivers do context initialization and memory mapping with \textit{lazy binding}, which is fine for a single workload but becomes painful under concurrent execution---startup delays grow, and they show up directly in user-facing latency. NEO \cite{jiang2024neo} addresses cache management but leaves the GPU-level context conflict question open.
-The \textbf{GPU Process Allocator} is our answer to this. Rather than waiting for runtime to resolve these conflicts, it reserves GPU execution resources up front: context IDs, memory pools, and kernel queues are pre-assigned. It also keeps memory segments separated across models, which keeps cache pollution down, and it co-schedules I/O-intensive and compute-intensive models so the GPU is not idle waiting on either side.
+The \textbf{GPU Process Allocator} resolves these conflicts ahead of time rather than at runtime, through three policies. (i)~\emph{Pre-defined slot reservation} pre-assigns each model a context ID, memory pool, and kernel queue, removing CUDA initialization from the critical path. (ii)~\emph{Context separation with fixed memory pools} places models in disjoint regions, lowering fragmentation and cross-model cache interference. (iii)~\emph{Priority-based scheduling} co-schedules I/O-bound and compute-bound models so neither stalls the other and idle GPU cycles shrink. The net effect is a lightweight extension of process pinning that improves QoS stability and latency predictability when several models share one GPU~\cite{stojkovic2025dynamollm}.
 
-In practice, the allocator runs three policies.
-\textbf{Pre-defined execution slot reservation} hands each model a context ID, memory pool, and kernel queue ahead of time, so CUDA initialization no longer happens on the critical path.
-\textbf{Context separation with fixed memory pools} assigns models to separate configured regions; the finite experiments show lower fragmentation and cross-model cache interference.
-\textbf{Priority-based scheduling} orders execution between I/O-bound and compute-bound models so neither stalls the other and idle GPU cycles shrink.
-The result is a small extension of process pinning that helps preserve \textbf{Quality of Service (QoS) stability} and gives more \textbf{predictable latency} when several models share one GPU \cite{stojkovic2025dynamollm}. Algorithm~\ref{alg:gpa_en} summarizes the end-to-end pre-reservation and dispatch flow.
-
-% -- Pseudocode for GPU Process Allocator (English) --
-\begin{algorithm}[t]
-\caption{GPU Process Allocator Pseudocode}
-\label{alg:gpa_en}
-\begin{algorithmic}[1]
-\Require Set of models $\mathcal{M}$, GPU resource pool $\mathcal{R}$
-\State Initialize free context IDs, memory pools, and kernel queues
-\For{each model $m \in \mathcal{M}$}
-  \State Reserve a context ID, memory pool, and kernel queue for $m$
-  \State Assign a priority based on whether $m$ is I/O-bound or compute-bound
-\EndFor
-\While{tasks remain}
-  \State Dequeue the next task $t$ based on priority
-  \State Launch $t$ on its reserved context
-  \If{$t$ finishes}
-    \State Return its resources to $\mathcal{R}$
-  \EndIf
-\EndWhile
-\end{algorithmic}
-\end{algorithm}
 
 
 \subsection{Task Memory Manager}
 Memory usage during LLM inference shifts back and forth between DRAM and VRAM as input and generation lengths change. eLLM \cite{xu2025ellm} responded to this by extending the CPU buffer; PIE \cite{xu2024pie} took a speculative-swap approach. Neither, though, paid attention to NUMA-induced latency or to optimization within DRAM itself.
 
-Our \textbf{Task Memory Manager} closes that gap. It pairs task-level memory control with NUMA-aware policies: by aligning processes with the right memory nodes, remote-access delay is reduced, and a jemalloc-based custom heap separates small objects from large tensors so that fragmentation stays manageable \cite{hunter2021hugepage,yang2023numalloc}. On top of this, the module looks ahead: tensors with low expected access probability are offloaded preemptively, and a small predictive model of memory pressure feeds anticipatory decisions \cite{korthikanti2023reducing}.
-We model memory access latency as
-\[
-T_{access} = T_{local} + \gamma \cdot T_{remote},
-\]
-where $\gamma$ is the penalty factor from a remote NUMA access.
-Bad allocation policy here cascades---excessive \textit{page reclaim}, \textit{mmap} failures, unnecessary \textit{buffer eviction}. Existing fixes mostly fall back to reactive GPU offloading or memory compression once VRAM gets tight; they leave DRAM behavior and NUMA locality on the table.
-
-The Task Memory Manager has four pieces.
-\textbf{NUMA-aware memory mapping} pins process and thread data to local NUMA nodes through system calls such as \texttt{mbind()} and \texttt{numa\_alloc\_onnode()} so that remote-memory traffic is minimized.
-\textbf{jemalloc-based heap optimization} tunes pool size, allocation granularity, and cache-aware placement, with small objects kept apart from large tensors.
-\textbf{Task-level redistribution} watches per-request memory consumption and offloads non-critical tensors to DRAM before VRAM saturates.
-\textbf{A lightweight memory pressure prediction model} reads live utilization and I/O queue depth to predict shortages and trigger mitigation early.
-Together, these free up VRAM and---a point worth highlighting---make DRAM--VRAM use more efficient as a unit, with less fragmentation and fewer \textit{page reclaim} events. RAMSES is therefore able to keep memory provisioning stable and access latency low even when several models and processes contend for the same node. Algorithm~\ref{alg:tmm_en} states the full NUMA-aware allocation and predictive offloading procedure.
-
-% -- Pseudocode for Task Memory Manager (English) --
-\begin{algorithm}[t]
-\caption{Task Memory Manager Pseudocode}
-\label{alg:tmm_en}
-\begin{algorithmic}[1]
-\Require Execution graph $G$, memory threshold $\tau$
-\State Bind threads to local NUMA nodes using OS calls (e.g., \texttt{numa\_alloc\_onnode})
-\State Initialize separate jemalloc heaps for small objects and large tensors
-\For{each incoming request $r$}
-  \State Monitor VRAM usage and fragmentation
-  \If{usage $> \tau$}
-    \State Identify tensors in $G$ with low immediate reuse probability
-    \State Offload these tensors to DRAM/NVMe
-  \EndIf
-  \State Use a lightweight predictor to anticipate memory pressure based on current utilization and I/O depth
-  \State Pre-allocate VRAM/DRAM resources for the next request
-\EndFor
-\end{algorithmic}
-\end{algorithm}
+Our \textbf{Task Memory Manager} pairs task-level memory control with four NUMA-aware mechanisms. \emph{NUMA-aware mapping} pins process and thread data to local nodes via \texttt{mbind()} and \texttt{numa\_alloc\_onnode()} to minimize remote traffic; a \emph{jemalloc-based heap} separates small objects from large tensors to bound fragmentation~\cite{hunter2021hugepage,yang2023numalloc}; \emph{task-level redistribution} offloads non-critical tensors to DRAM before VRAM saturates; and a \emph{lightweight pressure predictor} reads live utilization and I/O-queue depth to trigger mitigation early~\cite{korthikanti2023reducing}. We model memory-access latency as $T_{access}=T_{local}+\gamma\,T_{remote}$, with $\gamma$ the remote-NUMA penalty. Poor allocation here cascades into excessive page reclaim, \texttt{mmap} failures, and buffer eviction; reactive offloading or compression leaves DRAM behavior and NUMA locality unaddressed. Together these keep DRAM--VRAM use efficient under contention, with less fragmentation and fewer page-reclaim events.
 
 
-\begin{table*}[t]
+
+\begin{table}[t]
 \centering
-\renewcommand{\arraystretch}{1.0}
-\caption{Comparison of RAMSES with existing baselines. Each row identifies a baseline serving stack, its key optimization technique (\emph{Key Features}), the reason it was selected for evaluation (\emph{Rationale}), and which RAMSES module addresses the corresponding bottleneck (\emph{Targeted by RAMSES}). Citations refer to the baseline systems.}
+\renewcommand{\arraystretch}{1.05}
+\caption{Baselines compared against RAMSES: key technique and the RAMSES module that targets each bottleneck. Citations refer to the baseline systems.}
 \label{tab:baseline_comparison}
-\begin{tabular}{|p{3.8cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
-\hline
-\textbf{Method} & \textbf{Key Features} & \textbf{Rationale} & \textbf{Targeted by RAMSES} \\
-\hline
-Default (PyTorch) & No optimization & Ground truth reference & Overall performance gain \\
-\hline
-FlexGen~\cite{sheng2023flexgen} (ICML'23) & CPU offloading & VRAM expansion via offload & GPU Booster (swap) \\
-\hline
-SwapAdvisor~\cite{swapAdvisor2020} (ASPLOS'20) & GPU--CPU swap & Canonical swap optimization & Task Memory Manager \\
-\hline
-NEO~\cite{jiang2024neo} (MLSys'25) & KV cache offload + sched. & Recent tier utilization & Hierarchical (full) tier use \\
-\hline
-SpecOffload~\cite{zhuge2025specoffload} (arXiv'25) & Cross-tier swap min. & Latest transfer optimization & NVMe--VRAM transfer path \\
-\hline
-vLLM~\cite{kwon2023pagedattention} (SOSP'23) & KV cache + streaming & SOTA inference optimization & End-to-end latency \\
-\hline
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{1.95cm}p{2.5cm}p{3.1cm}@{}}
+\toprule
+\textbf{Method} & \textbf{Key technique} & \textbf{Targeted by RAMSES} \\
+\midrule
+PyTorch (default) & none & overall gain \\
+FlexGen~\cite{sheng2023flexgen} & CPU offloading & GPU Booster (swap) \\
+SwapAdvisor~\cite{swapAdvisor2020} & GPU--CPU swap & Task Memory Manager \\
+NEO~\cite{jiang2024neo} & KV offload + sched. & full-tier use \\
+SpecOffload~\cite{zhuge2025specoffload} & cross-tier swap & NVMe--VRAM path \\
+vLLM~\cite{kwon2023pagedattention} & KV cache + stream & end-to-end latency \\
+\bottomrule
 \end{tabular}
-\vspace{-12pt}
-\end{table*}
+\end{table}
 
 \subsection{GPU Booster with Swap Support}
-VRAM capacity remains one of the hardest constraints in serving large models. FlexGen \cite{sheng2023flexgen} and SwapAdvisor \cite{swapAdvisor2020} support GPU--CPU swapping, but neither is tuned to GPU memory hierarchies in particular.
+FlexGen~\cite{sheng2023flexgen} and SwapAdvisor~\cite{swapAdvisor2020} support GPU--CPU swapping but are not tuned to GPU memory hierarchies. The \textbf{GPU Booster} targets VRAM capacity by selecting inactive tensors for block-aligned asynchronous transfer, implemented as an \texttt{LD\_PRELOAD} layer over the CUDA runtime and caching allocator: allocation, free, and host--device copy calls are intercepted so placement is managed without modifying the model or framework (intercepted entry points, buffer registration, and driver/filesystem versions are in the artifact).
 
-The \textbf{GPU Booster with swap support} targets this bottleneck by selecting inactive tensors and scheduling block-aligned asynchronous transfers. It is implemented as an \texttt{LD\_PRELOAD} interception layer over the CUDA runtime and caching allocator: allocation, free, and host--device copy calls are intercepted so that tensor placement and movement are managed without modifying the model or the serving framework. Intercepted entry points, buffer-registration details, and exact driver/filesystem versions are documented with the review artifact.
+Unlike OS-level swapping, which is unaware of GPU memory semantics, the GPU Booster ranks eviction candidates by execution-graph reuse distance, overlaps transfer with compute on dedicated asynchronous CUDA streams, and uses 4~MB block alignment matched to the NVMe erase-block granularity (examined in the sensitivity study of Section~\ref{sec:results}). Where GPUDirect Storage is available, tensors move over a direct VRAM--NVMe DMA path; otherwise the layer falls back to a pinned-host-buffer staged path with the same overlap. Partial reload fetches only the portion of a swapped tensor the next kernel needs, and output equivalence against the baseline is checked bitwise for FP32 and within tolerance for FP16.
 
-Conventional offloading typically pays a noticeable transfer cost, and OS-level swapping is unaware of GPU memory semantics, which limits how well it can do. The GPU Booster instead uses execution-graph reuse distance to rank eviction candidates, dedicated asynchronous CUDA streams to overlap transfer with compute, and 4~MB block alignment matched to the NVMe erase-block granularity; the block-size choice is examined in the sensitivity study of Section~\ref{sec:results}. On hosts that expose GPUDirect Storage, tensors move over a direct VRAM--NVMe DMA path; otherwise the layer falls back to a pinned-host-buffer staged path with the same asynchronous overlap. Partial reload fetches only the portion of a swapped tensor required by the next kernel, and output equivalence against the unoptimized baseline is checked bitwise for FP32 and within the precision tolerance for FP16.
+The goal is to serve models whose state exceeds VRAM capacity while keeping exposed transfer latency low. All three module procedures are summarized in Algorithm~\ref{alg:ramses}.
 
-The goal is to serve models whose state exceeds VRAM capacity while keeping exposed transfer latency low. Algorithm~\ref{alg:gbooster_en} summarizes the control flow.
 \begin{algorithm}[t]
-\caption{GPU Booster with Swap Support Pseudocode}
-\label{alg:gbooster_en}
+\caption{RAMSES module procedures}
+\label{alg:ramses}
+\scriptsize
 \begin{algorithmic}[1]
-\Require Execution graph $G$
-\For{each tensor $t$ in $G$}
-  \If{$t$ is not required in upcoming compute steps}
-    \State Align $t$ to 4MB boundaries
-    \State Initiate asynchronous DMA transfer of $t$ to NVMe storage
-    \State Mark $t$ as swapped out
-  \EndIf
-\EndFor
-\While{serving requests}
-  \If{the next computation step reaches a swapped-out tensor $t$}
-    \State Partially reload $t$ via asynchronous DMA from NVMe
-    \State Resume computation once the needed portion of $t$ has been fetched
-  \EndIf
-\EndWhile
+\Procedure{GPUProcessAllocator}{models $\mathcal{M}$, pool $\mathcal{R}$}
+  \State Initialize free context IDs, memory pools, kernel queues
+  \For{each $m\in\mathcal{M}$}
+    \State Reserve context/pool/queue; set priority (I/O- vs compute-bound)
+  \EndFor
+  \While{tasks remain}
+    \State Dequeue by priority; launch on reserved context; free on completion
+  \EndWhile
+\EndProcedure
+\Procedure{TaskMemoryManager}{graph $G$, threshold $\tau$}
+  \State Bind threads to local NUMA nodes; split jemalloc heaps (small/large)
+  \For{each request $r$}
+    \If{VRAM usage $>\tau$} \State offload low-reuse tensors of $G$ to DRAM/NVMe \EndIf
+    \State Predict pressure from utilization/I-O depth; pre-allocate next request
+  \EndFor
+\EndProcedure
+\Procedure{GPUBooster}{graph $G$}
+  \For{each inactive tensor $t\in G$}
+    \State 4\,MB-align; async DMA $t\!\to\!$NVMe; mark swapped-out
+  \EndFor
+  \While{serving}
+    \State On reaching a swapped $t$: partial async reload, then resume
+  \EndWhile
+\EndProcedure
 \end{algorithmic}
 \end{algorithm}
+
 
 %----------------------------------------------------------------
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\linewidth]{figures/phase_diagram.png}
-\caption{Operating map for the two pressure ratios. Here $\alpha=D/C_f$ denotes capacity pressure and $\beta$ is the ratio of non-overlapped transfer time to compute, memory, and synchronization time. The dashed lines are operational classification thresholds used by the controller, not feasibility, determinism, or stability guarantees. Under the evaluated workloads RAMSES operates in the coordination-dominated region ($0.6<\beta<0.9$), whereas the baselines run at higher mean transfer pressure and approach the transfer-limited boundary ($\beta\to1$) under burst load; the corresponding measured behavior is reported in Section~\ref{sec:results}.}
-\label{fig:phase_diagram}
-\end{figure}
 
 \subsection{Overlap-Aware Operating Model}\label{sec:theory}
 
@@ -201,7 +144,7 @@ rounding is included in the measured volumes.  We call observations with
 $\alpha>1$ capacity-limited and observations with $\beta\geq1$ transfer-
 limited; the remaining points are coordination-dominated.  These are
 operational labels, not theorems.  They neither imply zero swapping nor a
-worst-case bound.  Fig.~\ref{fig:phase_diagram} summarizes the resulting
+worst-case bound.  Fig.~\ref{fig:phase_measured} summarizes the resulting
 classification.  Section~\ref{sec:results} reports the operating regime the
 evaluated systems occupy; per-request measured $(\alpha,\beta)$ values and the
 residual of Eq.~\eqref{eq:latency_total} against end-to-end latency are logged
@@ -248,13 +191,14 @@ hardware- or software-in-the-loop validation.  RAMSES must therefore be kept
 outside a safety function unless independently qualified by the integrator.
 
 \subsection{Ablation Analysis}
-The three modules of RAMSES contribute on their own, but they also reinforce each other when combined. To show this, we ran an \textbf{ablation study} over four configurations: full RAMSES, RAMSES without the GPU Process Allocator, without the Task Memory Manager, and without the GPU Booster. Table~\ref{tab:ablation} summarizes the outcome---every ablation degrades performance, and the breakdown matches the design intent of each module. Removing the \textbf{GPU Process Allocator}, in particular, has the largest impact on inference latency (35.0\% $\rightarrow$ 20.5\%, a 14.5~percentage-point drop), consistent with its role of pre-resolving CUDA context conflicts on the critical path. Removing the \textbf{Task Memory Manager} has the largest impact on VRAM reduction (15.0\% $\rightarrow$ 5.0\%, a 10.0~percentage-point drop), consistent with its NUMA-aware allocation and predictive DRAM offloading. Disabling the \textbf{GPU Booster} produces an intermediate degradation across both latency and VRAM, consistent with its swap-aware role between VRAM and NVMe. The pattern lines up cleanly with the design intent: each of the three modules dominates the metric it was built to target~\cite{korthikanti2023reducing}.
+We ablate the three modules over four configurations (Table~\ref{tab:ablation}); every ablation degrades performance, and each module dominates the metric it targets. Removing the \textbf{GPU Process Allocator} has the largest latency impact (35.0\%$\rightarrow$20.5\%, $-$14.5~pp), matching its role of pre-resolving CUDA context conflicts on the critical path; removing the \textbf{Task Memory Manager} has the largest VRAM impact (15.0\%$\rightarrow$5.0\%, $-$10.0~pp), matching its NUMA-aware allocation and predictive offloading; and disabling the \textbf{GPU Booster} degrades both intermediately, matching its VRAM--NVMe swap role~\cite{korthikanti2023reducing}.
 
 \begin{table}[h]
 \centering
-\renewcommand{\arraystretch}{1.1}
+\renewcommand{\arraystretch}{1.0}
 \caption{Ablation study results: Impact of disabling RAMSES modules}
 \label{tab:ablation}
+\footnotesize
 \begin{tabular}{|l|c|c|c|}
 \hline
 \textbf{Configuration} &

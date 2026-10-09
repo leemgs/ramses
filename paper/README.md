@@ -28,12 +28,12 @@ cd paper
 pdflatex "\def\HLREV{}\input{main}" && bibtex main \
   && pdflatex "\def\HLREV{}\input{main}" && pdflatex "\def\HLREV{}\input{main}"
 # or to a distinct output name:
-pdflatex -jobname=main.highlighted "\def\HLREV{}\input{main}"   # (+ bibtex, 2x pdflatex)
+pdflatex -jobname=main-highlighted "\def\HLREV{}\input{main}"   # (+ bibtex, 2x pdflatex)
 ```
 
 Highlighting is driven by the `\rev{..}` / `{\revcolor ..}` macros in
 `main.tex`; they are no-ops in the clean build, so `main.pdf` is unchanged.
-The pre-built highlighted copy is `main.highlighted.pdf`.
+The pre-built highlighted copy is `main-highlighted.pdf`.
 
 The executable artifact and its input data live in the sibling `../artifact/`
 directory. Run its generators from the repository root as documented in

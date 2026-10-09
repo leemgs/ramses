@@ -31,12 +31,17 @@ power-analyzer rank cross-check. Model-load time and peak VRAM are reported from
 2,000 requests per system (59.9% and 15.1% reductions), and the 72-hour arrival
 trace is summarized from 4,320 one-minute records per system (SLA violations
 8.70% to 0.60%, p99 latency 546 ms to 341 ms), all as measured CSVs. We also specify the online controller and the
-GPU Booster implementation and correct the four reviewer-identified references
-against their primary records. The submission is accompanied by a
+GPU Booster implementation. For the references, we corrected the four
+reviewer-identified records against their primary sources, fixed the flagged
+citation-support items and the FlexGen tier in Table I, and re-checked every
+entry for metadata completeness (author, title, venue, year); we did not attempt
+an exhaustive line-by-line re-verification of all records against publisher
+pages. The submission is accompanied by a
 reproducibility artifact containing the LD_PRELOAD orchestrator layer, the
 trace generator, baseline invocation scripts, the measurement schema, the raw
 per-run data, and the analysis scripts underlying every reported number. A
-detailed point-by-point response accompanies the submission.
+detailed point-by-point response accompanies the submission, and the manuscript
+has been anonymized for double-blind review.
 
 Sincerely,
 The Authors

@@ -208,13 +208,23 @@ def table_qos(qos, outdir):
     write_table_body(os.path.join(outdir, "qos_body.tex"), body)
 
 
+DATASET_DISPLAY = {
+    "actual_mvtec_ad": "MVTec AD", "mvtec_ad": "MVTec AD",
+    "actual_visa": "VisA", "visa": "VisA",
+    "actual_ai4i_2020": "AI4I 2020", "ai4i_2020": "AI4I 2020",
+}
+MODEL_DISPLAY = {"vit-h14": "ViT-H/14", "llama3-8b": "Llama-3 8B"}
+
+
 def table_industrial(industrial, outdir):
     if not industrial:
         return
     body = []
     for r in industrial:
+        ds = DATASET_DISPLAY.get(r.get("dataset", "").strip().lower(), r.get("dataset", "--"))
+        md = MODEL_DISPLAY.get(r.get("model", "").strip().lower(), r.get("model", "--"))
         body.append(" & ".join([
-            latex_text(r.get("dataset", "--")), latex_text(r.get("model", "--")),
+            latex_text(ds), latex_text(md),
             num(r, "baseline_accuracy", "{:.3f}"), num(r, "ramses_accuracy", "{:.3f}"),
             num(r, "baseline_auroc", "{:.3f}"), num(r, "ramses_auroc", "{:.3f}"),
             num(r, "output_equivalence", "{:.3f}"),

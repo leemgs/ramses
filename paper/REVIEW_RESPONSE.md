@@ -150,6 +150,12 @@ scoped as GPU-only with a PDU rank cross-check.
     - Pie — Xu, Mao, Mo, Liu, Stoica (arXiv:2411.09317).
     - eLLM — Xu, Zhang, Xiong, Guo, Liu, Zhou, Hu, Wu, Shao, Wang, Yuan, Zhao, Guo, Leng (arXiv:2506.15155).
     - Edge-MoE — Sarkar, Liang, Fan, Wang, Hao (ICCAD 2023).
+
+    In addition, the reviewer-identified citation-support items (the RAMFS/tmpfs
+    and pressure-predictor citations) and the FlexGen tier in Table I were
+    corrected, and every entry was re-checked for metadata completeness
+    (author, title, venue, year). We did not claim an exhaustive line-by-line
+    re-verification of all records against publisher pages.
 11. **Energy.** The primary energy results are now **synchronized whole-node**
     measurements: GPU (NVML) plus CPU-package and DRAM (RAPL) integrated per
     request on a shared clock by `code/collect_energy.py`, with idle subtraction

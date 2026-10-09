@@ -13,6 +13,7 @@ Section~\ref{sec:results}.}
   {\def\generatedtablebody{\input{tables/industrial_body.tex}}}
   {\def\generatedtablebody{\multicolumn{7}{c}{\emph{Generated from \texttt{../code/eval\_industrial.py} via \texttt{make\_tables.py}.}}}}
 \footnotesize
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llccccc}
 \toprule
 \textbf{Dataset} & \textbf{Model} & \textbf{Base} & \textbf{RAMSES} & \textbf{Base} & \textbf{RAMSES} & \textbf{Output} \\
@@ -21,5 +22,6 @@ Section~\ref{sec:results}.}
 \generatedtablebody
 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

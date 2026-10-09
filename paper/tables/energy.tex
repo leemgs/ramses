@@ -10,6 +10,8 @@
   {\def\generatedtablebody{\input{tables/energy_body.tex}}}
   {\def\generatedtablebody{\multicolumn{5}{c}{\emph{Generated from whole-node power logs via \texttt{../code/make\_tables.py}.}}}}
 \footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
 \textbf{System} & \textbf{Energy/req} & \textbf{Energy/token} & \textbf{EDP} & \textbf{Throughput} \\
@@ -18,5 +20,6 @@
 \generatedtablebody
 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

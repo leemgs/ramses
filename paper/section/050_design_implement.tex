@@ -109,6 +109,7 @@ The goal is to serve models whose state exceeds VRAM capacity while keeping expo
 
 \subsection{Overlap-Aware Operating Model}\label{sec:theory}
 
+{\revcolor
 We use the following model as an engineering classification tool, not as a
 real-time guarantee.  Let $D(t)$ be the bytes resident or demanded by a step,
 $C_f=C_{\mathrm{VRAM}}+C_{\mathrm{DRAM}}$ the usable fast-tier capacity,
@@ -151,7 +152,10 @@ residual of Eq.~\eqref{eq:latency_total} against end-to-end latency are logged
 by the instrumentation of Section~\ref{sec:latency_protocol} and released with
 the artifact.
 
+}
+
 \subsection{Online Policy and Complexity}\label{sec:controller}
+{\revcolor
 Every 200~ms the analyzer reads allocated bytes, transfer counters, queue
 depth, effective bandwidth, and exponentially weighted compute, memory, and
 synchronization times.  It computes Eqs.~\eqref{eq:alpha_def}--\eqref{eq:beta_def}
@@ -179,7 +183,10 @@ artifact.  The measured 1.68~ms is mean controller work per serving request
 and is not compatible with a 2~ms end-to-end claim; we therefore make no such
 claim.
 
+}
+
 \subsection{Scope of Timing and Safety Claims}
+{\revcolor
 The measured latency distributions are QoS observations for non-safety AI
 serving.  They are not WCET bounds, deterministic-latency guarantees, control-
 loop stability proofs, or evidence of IEC~61508 Safety Integrity Level (SIL)
@@ -190,8 +197,10 @@ common-cause and safe-state assumptions, a plant-specific delay margin, and
 hardware- or software-in-the-loop validation.  RAMSES must therefore be kept
 outside a safety function unless independently qualified by the integrator.
 
+}
+
 \subsection{Ablation Analysis}
-We ablate the three modules over four configurations (Table~\ref{tab:ablation}); every ablation degrades performance, and each module dominates the metric it targets. Removing the \textbf{GPU Process Allocator} has the largest latency impact (35.0\%$\rightarrow$20.5\%, $-$14.5~pp), matching its role of pre-resolving CUDA context conflicts on the critical path; removing the \textbf{Task Memory Manager} has the largest VRAM impact (15.0\%$\rightarrow$5.0\%, $-$10.0~pp), matching its NUMA-aware allocation and predictive offloading; and disabling the \textbf{GPU Booster} degrades both intermediately, matching its VRAM--NVMe swap role~\cite{korthikanti2023reducing}.
+\rev{We ablate the three modules over four configurations (Table~\ref{tab:ablation}); every ablation degrades performance, and each module dominates the metric it targets. Removing the \textbf{GPU Process Allocator} has the largest latency impact (35.0\%$\rightarrow$20.5\%, $-$14.5~pp), matching its role of pre-resolving CUDA context conflicts on the critical path; removing the \textbf{Task Memory Manager} has the largest VRAM impact (15.0\%$\rightarrow$5.0\%, $-$10.0~pp), matching its NUMA-aware allocation and predictive offloading; and disabling the \textbf{GPU Booster} degrades both intermediately, matching its VRAM--NVMe swap role~\cite{korthikanti2023reducing}.}
 
 \begin{table}[h]
 \centering

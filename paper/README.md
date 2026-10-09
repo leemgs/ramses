@@ -16,6 +16,25 @@ cd paper
 latexmk -pdf main.tex
 ```
 
+### Change-highlighted revision (blue, no track changes)
+
+The decision letter asks for the revised manuscript with major changes marked in
+a different font color (no track changes). The same source builds either the
+clean manuscript (black) or a highlighted revision in which the major
+additions/changes are blue:
+
+```sh
+cd paper
+pdflatex "\def\HLREV{}\input{main}" && bibtex main \
+  && pdflatex "\def\HLREV{}\input{main}" && pdflatex "\def\HLREV{}\input{main}"
+# or to a distinct output name:
+pdflatex -jobname=main_highlighted "\def\HLREV{}\input{main}"   # (+ bibtex, 2x pdflatex)
+```
+
+Highlighting is driven by the `\rev{..}` / `{\revcolor ..}` macros in
+`main.tex`; they are no-ops in the clean build, so `main.pdf` is unchanged.
+The pre-built highlighted copy is `main_highlighted.pdf`.
+
 The executable artifact and its input data live in the sibling `../artifact/`
 directory. Run its generators from the repository root as documented in
 `../artifact/README.md`.

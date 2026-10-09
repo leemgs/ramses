@@ -158,6 +158,19 @@
 \usepackage{xcolor,color}
 %\usepackage{soul}
 
+% ---- Change-highlighting for the revised submission -----------------------
+% Build the clean manuscript normally (black). Build the highlighted revision
+% (major additions/changes in blue, no track changes) with:
+%   pdflatex -jobname=main_highlighted "\def\HLREV{}\input{main}"
+% \rev{..} marks single-paragraph/inline changes; {\revcolor ..} marks a
+% multi-paragraph block. Both are no-ops in the clean build, so main.pdf is
+% unchanged.
+\definecolor{revblue}{RGB}{0,0,221}
+\newif\ifhl\hlfalse
+\ifdefined\HLREV\hltrue\fi
+\newcommand{\rev}[1]{\ifhl\textcolor{revblue}{#1}\else#1\fi}
+\newcommand{\revcolor}{\ifhl\color{revblue}\fi}
+
 % Hyperlinks to content
 % \usepackage[linktocpage=true]{hyperref}
 % \usepackage{hyperref}

@@ -1,7 +1,7 @@
 \section{Introduction}\label{sec:introduction}
 \IEEEPARstart{M}{ODEL} serving becomes a memory-systems problem when parameters and key--value state exceed accelerator memory. Requests then couple GPU video RAM (VRAM), host dynamic RAM (DRAM), NVMe bandwidth, queueing, and synchronization. A policy that helps one configuration can hurt another because the active bottleneck changes with working-set demand, reuse, concurrency, and transfer direction.
 
-This issue matters for industrial analytics such as inspection, predictive maintenance, and digital-twin support, where sustained availability and energy budgets are important. Our evidence, however, is a laboratory single-node evaluation driven partly by a parameterized synthetic arrival trace; it is not a factory field trial or a hard-real-time control-loop evaluation. We consequently report deadline misses only as Quality of Service (QoS), make no 2~ms or Time-Sensitive Networking compliance claim, and do not map request misses to IEC~61508 Safety Integrity Levels.
+This issue matters for industrial analytics such as inspection, predictive maintenance, and digital-twin support, where sustained availability and energy budgets are important. \rev{Our evidence, however, is a laboratory single-node evaluation driven partly by a parameterized synthetic arrival trace; it is not a factory field trial or a hard-real-time control-loop evaluation. We consequently report deadline misses only as Quality of Service (QoS), make no 2~ms or Time-Sensitive Networking compliance claim, and do not map request misses to IEC~61508 Safety Integrity Levels.}
 
 Prior systems optimize paging, GPU--CPU offload, or request scheduling. RAMSES instead coordinates the VRAM--DRAM--NVMe path within one node while observing occupancy separately from actual bidirectional traffic. The design uses a lightweight state machine to choose admission, prefetch, and eviction actions rather than treating an analytical boundary as a guarantee.
 
@@ -20,4 +20,4 @@ The contributions are:
 \item \emph{Boundary-seeking empirical evidence}: the evaluation crosses models and regimes, includes a controller-disabled counterfactual and parameter sweeps, and reports absolute tails, uncertainty, failures, and synchronized whole-node (GPU, CPU, DRAM) energy.
 \end{itemize}
 
-The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.
+\rev{The scope is deliberately narrow: RAMSES supports best-effort single-node inference. Multi-node fabrics, plant integration, certified energy measurement, real-time guarantees, and functional-safety qualification remain future work.}

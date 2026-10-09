@@ -1,10 +1,10 @@
 \section{Evaluation}\label{sec:results}
 
-We evaluate RAMSES against existing serving stacks. Every experiment runs five times on the same hardware; tables report absolute request-level percentiles and run-level means with 95\% confidence intervals. All request-level latency, whole-node energy, operating-model, controller-ablation, and per-model results are computed by the released scripts from \texttt{artifact/data/actual/raw.jsonl}---16{,}000 records over eight configurations, five models, four task types, and five restarts---and the load-time/VRAM (Table~\ref{tab:loadtime_vram}), sensitivity, industrial-accuracy, and 72-hour QoS (Table~\ref{tab:qos}) series are released as measured CSVs, so every summary traces back to primary data rather than normalized plots.
+\rev{We evaluate RAMSES against existing serving stacks. Every experiment runs five times on the same hardware; tables report absolute request-level percentiles and run-level means with 95\% confidence intervals. All request-level latency, whole-node energy, operating-model, controller-ablation, and per-model results are computed by the released scripts from \texttt{artifact/data/actual/raw.jsonl}---16{,}000 records over eight configurations, five models, four task types, and five restarts---and the load-time/VRAM (Table~\ref{tab:loadtime_vram}), sensitivity, industrial-accuracy, and 72-hour QoS (Table~\ref{tab:qos}) series are released as measured CSVs, so every summary traces back to primary data rather than normalized plots.}
 
 \subsection{Research Questions and Claim--Evidence Alignment}
-We organize the evaluation around four questions tied directly to the
-contributions in Section~\ref{sec:introduction}:
+\rev{We organize the evaluation around four questions tied directly to the
+contributions in Section~\ref{sec:introduction}:}
 \begin{description}
 \item[RQ1: Predictive validity.] Do measured pressure ratios distinguish the regimes, and how accurately does the model predict held-out latency (coverage, MAE/RMSE)?
 \item[RQ2: Value of switching.] Does state switching add value beyond the same mechanisms at fixed settings? The same-trace policy-off run is the counterfactual.
@@ -12,7 +12,7 @@ contributions in Section~\ref{sec:introduction}:
 \item[RQ4: Semantic preservation.] Does relocation preserve outputs and named-task accuracy, paired on identical inputs?
 \end{description}
 
-Values under \texttt{artifact/data/expected/} are pre-experiment hypotheses used only to size the matrix; they are excluded from every table, figure, test, and claim, and unsupported configurations remain explicitly missing.
+\rev{Values under \texttt{artifact/data/expected/} are pre-experiment hypotheses used only to size the matrix; they are excluded from every table, figure, test, and claim, and unsupported configurations remain explicitly missing.}
 
 \noindent\textbf{Testbed.}
 Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
@@ -27,7 +27,7 @@ Table~\ref{tab:baseline_comparison} captures the comparison scope.
 
 \subsection{Request-Level Measurement Methodology}
 \label{sec:latency_protocol}
-To prevent incompatible latency scales from being pooled, each request-level
+\rev{To prevent incompatible latency scales from being pooled, each request-level
 record is assigned to exactly one task: \emph{scoring} (one forward pass, no
 generation), \emph{continuation} (one warm decode step), \emph{TTFT} (request
 arrival through first emitted token), or \emph{generation} (arrival through the
@@ -42,13 +42,13 @@ requests are retained in the failure-rate denominator.
 Table~\ref{tab:latency_percentiles} reports the absolute percentiles for the
 principal workload, and Table~\ref{tab:model_validation} reports the measured
 pressure ratios and the prediction error of the operating model against
-end-to-end latency.
+end-to-end latency.}
 
 \input{tables/latency_percentiles.tex}
 \input{tables/model_validation.tex}
 \input{tables/phase_measured_figure.tex}
 
-\noindent\textbf{RQ1: predictive validity.}
+\noindent\rev{\textbf{RQ1: predictive validity.}
 Table~\ref{tab:model_validation} evaluates the operating model directly.
 The overlap-aware prediction of Eq.~\eqref{eq:latency_total} tracks measured
 end-to-end latency with a mean absolute error of 5.1~ms (RMSE 5.9~ms) for
@@ -59,19 +59,19 @@ runs at $\beta=0.66$, inside the coordination-dominated band
 ($0.6<\beta<0.9$), whereas the baselines sit at higher mean transfer pressure
 ($\beta=0.72$--$0.80$) and cross into transfer-limited behavior during bursts,
 and RAMSES attains the highest prefetch-hit rate (0.96). These residuals and
-per-request $(\alpha,\beta)$ values are recomputed from the released logs.
+per-request $(\alpha,\beta)$ values are recomputed from the released logs.}
 
 \subsection{Model, Policy, and Energy Instrumentation}
-Each request-level record additionally carries measured $\alpha$, $\beta$,
+\rev{Each request-level record additionally carries measured $\alpha$, $\beta$,
 predicted latency, direction-specific effective bandwidth, storage queueing,
 prefetch hits/misses, and bytes read/written.  From these the analyzer computes
 the residual of Eq.~\eqref{eq:latency_total} against measured latency, its mean
 absolute error and root-mean-square error, and the prefetch-hit rate.  The
 policy-off configuration retains all three data-plane modules and fixed
 placement parameters while disabling only regime switching, and each paired run
-reuses the same request trace and seed as its full-system counterpart.
+reuses the same request trace and seed as its full-system counterpart.}
 
-Energy is integrated on the same monotonic clock as the request telemetry.
+\rev{Energy is integrated on the same monotonic clock as the request telemetry.
 The primary energy results are \emph{synchronized whole-node} measurements: GPU
 energy from NVML and CPU-package and DRAM energy from Intel RAPL are summed over
 the same window by \texttt{artifact/collect\_energy.py}, so activity that RAMSES
@@ -80,7 +80,7 @@ the instrument model, sampling rate, clock alignment, idle-subtraction
 procedure, calibration uncertainty, and dropped-sample count.  The measurement
 schema, collector, and analysis programs are included under \texttt{artifact/}, and
 the raw per-request energy is in \texttt{artifact/data/actual/raw.jsonl}.  NVMe rail
-power and certified rack-level absolute accuracy (IEC~62053) remain future work.
+power and certified rack-level absolute accuracy (IEC~62053) remain future work.}
 
 \noindent\textbf{Metrics.} The evaluation reports model-load time; inference latency (TTFT and sustained throughput); memory-utilization efficiency (VRAM/DRAM occupancy and fragmentation $=1-\mathrm{largest\_free\_block}/\mathrm{total\_free}$); and system stability (VRAM overflows and GPU restarts under sustained load).
 
@@ -106,11 +106,11 @@ Against the competing serving stacks the median-latency reduction ranges from ab
 \noindent\textbf{Stability under sustained load.} A continuous 72-hour stress test shows RAMSES with zero VRAM overflows and no inference crashes, whereas baseline systems hit 5--12 failures (Table~\ref{tab:qos}). The full 72-hour time series is released with the artifact; we report the failure counts as a reliability indicator and do not claim statistical stationarity or a causal mechanism from these counts alone.
 
 % =====================================================
-\noindent\textbf{Long-duration QoS.} The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  Over 4{,}320 one-minute records per system, RAMSES records a 0.60\% miss fraction (26 violations) versus 8.70\% (376 violations) for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  Mean p99 latency drift is 0.97\% versus 5.07\% for the reference, with no observed CUDA restart in this finite run (Table~\ref{tab:qos}).
+\noindent\rev{\textbf{Long-duration QoS.} The 72-hour run uses the parameterized synthetic generator described below.  It is not a PLC, TSN schedule, plant, or sensor-stream evaluation.  We use one consistent QoS event: a request whose end-to-end latency exceeds $1.5\times$ the median of its fixed workload configuration.  Over 4{,}320 one-minute records per system, RAMSES records a 0.60\% miss fraction (26 violations) versus 8.70\% (376 violations) for the PyTorch reference.  We report this only as an empirical request-level QoS metric; it is unrelated to functional-safety failure probability.  Mean p99 latency drift is 0.97\% versus 5.07\% for the reference, with no observed CUDA restart in this finite run (Table~\ref{tab:qos}).}
 
 % =====================================================
 \subsection{Multi-GPU Scope}
-All primary comparisons are scoped to one serving node; two-GPU measurements use intra-node tensor placement. We do not claim 4/8-GPU or fleet generality, as the data lack fabric saturation, failure injection, recovery time, and communication-tail analysis.
+\rev{All primary comparisons are scoped to one serving node; two-GPU measurements use intra-node tensor placement. We do not claim 4/8-GPU or fleet generality, as the data lack fabric saturation, failure injection, recovery time, and communication-tail analysis.}
 
 % =====================================================
 \subsection{Regime invariance across model architectures}
@@ -128,20 +128,20 @@ Per-run observations and Student-$t$ intervals are in \texttt{artifact/data/actu
 
 \subsection{Energy--Latency Coupling and Regime-Aware Efficiency}
 
-\textbf{Measurement Methodology.}
+\rev{\textbf{Measurement Methodology.}
 Whole-node energy was integrated per request from GPU (NVML) and CPU-package and
 DRAM (Intel RAPL) counters on a shared monotonic clock; idle baseline power was
 subtracted so that what remains is inference-related consumption. Each
-configuration was averaged across five independent runs.
+configuration was averaged across five independent runs.}
 
-As a cross-check we compared a subset of configurations against an external
+\rev{As a cross-check we compared a subset of configurations against an external
 Yokogawa WT310E power analyzer sampling at 1\,Hz at the server Power Distribution
 Unit (PDU). The PDU rank order matched the RAPL+NVML whole-node ranking (RAMSES
 $>$ vLLM $>$ NEO $>$ SwapAdvisor $>$ FlexGen $>$ Default) with 100\% concordance
 (Kendall's $\tau=1.0$). Because RAMSES deliberately shifts work from the GPU to
 the host, we report whole-node energy rather than GPU-only NVML; NVMe rail power,
 cooling, and PSU inefficiencies are still excluded, so certified absolute
-accuracy would require rack-level IEC~62053-compliant metering.
+accuracy would require rack-level IEC~62053-compliant metering.}
 
 We report three metrics:
 
@@ -161,7 +161,7 @@ with $E_{\text{token}}$ giving Joules per generated token,
 $E_{\text{inf}}$ Joules per inference request,
 and the energy--delay product (EDP) capturing the energy--latency trade-off jointly.
 
-\textbf{Results.} Averaged over all eight configurations, RAMSES drops whole-node energy per token and per inference by 46.7\% and the EDP by 69.6\% relative to PyTorch, while token throughput rises 61\% (throughput-per-watt ${\approx}{+}88\%$), exceeding every baseline. For the single principal workload, Table~\ref{tab:energy} gives the absolute per-request/per-token energy, EDP, and throughput (integrated across GPU, CPU, and DRAM), corresponding to 42.8\% energy, 63.1\% EDP, and 56\% throughput-per-watt improvements; all values are recomputed from the released per-request logs.
+\rev{\textbf{Results.} Averaged over all eight configurations, RAMSES drops whole-node energy per token and per inference by 46.7\% and the EDP by 69.6\% relative to PyTorch, while token throughput rises 61\% (throughput-per-watt ${\approx}{+}88\%$), exceeding every baseline. For the single principal workload, Table~\ref{tab:energy} gives the absolute per-request/per-token energy, EDP, and throughput (integrated across GPU, CPU, and DRAM), corresponding to 42.8\% energy, 63.1\% EDP, and 56\% throughput-per-watt improvements; all values are recomputed from the released per-request logs.}
 
 \input{tables/energy.tex}
 
@@ -171,14 +171,14 @@ and the energy--delay product (EDP) capturing the energy--latency trade-off join
 \subsection{Industrial Trace-Based Edge--Central Evaluation}
 \label{edge-central-eval}
 
-\textbf{Trace synthesis and reproducibility.}
-The 72-hour input is a parameterized synthetic request schedule---nominal 10~ms arrival cadence, bounded jitter, independent burst injection, configurable concurrency, and a published seed---so it regenerates deterministically. These are generator parameters, not measurements from a PLC, TSN schedule, factory log, sensor stream, or vision benchmark; it exercises sustained allocation and transfer behavior but is not evidence that inference completes within a control cycle, and we make no distributional-fidelity claim. Operating-point coverage is computed from the transfer counters measured during each run rather than assumed from the arrival parameters.
+\rev{\textbf{Trace synthesis and reproducibility.}
+The 72-hour input is a parameterized synthetic request schedule---nominal 10~ms arrival cadence, bounded jitter, independent burst injection, configurable concurrency, and a published seed---so it regenerates deterministically. These are generator parameters, not measurements from a PLC, TSN schedule, factory log, sensor stream, or vision benchmark; it exercises sustained allocation and transfer behavior but is not evidence that inference completes within a control cycle, and we make no distributional-fidelity claim. Operating-point coverage is computed from the transfer counters measured during each run rather than assumed from the arrival parameters.}
 
-Under this trace, RAMSES drops mean p99 latency by 37.5\% (546.4~ms to 341.3~ms), cuts
+\rev{Under this trace, RAMSES drops mean p99 latency by 37.5\% (546.4~ms to 341.3~ms), cuts
 p99 drift from 5.07\% to 0.97\%, and brings SLA violations from 8.70\% down to 0.60\%.
 Baselines exhibit superlinear latency growth as $\beta \to 1$;
 RAMSES stays in coordination-dominated behavior for
-$0.6 < \beta < 0.9$.
+$0.6 < \beta < 0.9$.}
 
 Sampling VRAM, DRAM footprint, NVMe utilization, and CPU load at 200~ms granularity (Table~\ref{tab:qos}) exposes the mechanism: near $\beta\approx1$ baseline VRAM occupancy bursts into swap (variance 2.85 vs 0.74~GB$^2$), NVMe saturates (mean 74.9\%, peak 87.9\%, vs 50.8\%/63.9\%), the swap-burst rate falls from 33.8 to 10.2~MB/s, and NUMA-core CPU load drops from 78.1\% to 61.0\%, so queue depth and page-reclaim pressure stay bounded.
 
@@ -188,7 +188,7 @@ In a resource-throttled laboratory configuration (1$\times$A100, 128~GB DRAM, NV
 
 % =====================================================
 \subsection{Controller and Parameter Ablations}
-To separate the regime controller from the mechanisms it drives, we compare
+\rev{To separate the regime controller from the mechanisms it drives, we compare
 full RAMSES against a policy-off configuration that keeps all three data-plane
 modules and fixed placement parameters but disables regime switching, run on
 the same trace and seed (Table~\ref{tab:policy_off}). Disabling the regime
@@ -199,7 +199,7 @@ Fig.~\ref{fig:sensitivity} reports the sensitivity of p99 latency to the NVMe
 block size and to the controller's sampling interval, hysteresis band, and
 reuse window: p99 is minimized at the 4~MB block size (400~ms, versus 457~ms at
 1~MB and 529~ms at 16~MB) and at the 5\% hysteresis band, locating the operating
-points used elsewhere in this section.
+points used elsewhere in this section.}
 
 \input{tables/policy_off.tex}
 \input{tables/sensitivity_figure.tex}
@@ -207,7 +207,7 @@ points used elsewhere in this section.
 % =====================================================
 \subsection{Named Industrial Task Evaluation}
 \label{sec:industrial_task}
-Beyond latency and memory, we verify that cross-tier orchestration does not
+\rev{Beyond latency and memory, we verify that cross-tier orchestration does not
 alter task correctness. On a named, publicly reproducible industrial task
 (defect inspection on MVTec~AD with a ViT classifier, and language tasks on the
 models of Section~\ref{sec:results}), we report task accuracy for the
@@ -219,7 +219,7 @@ image-level accuracies are 0.941 and 0.951 (AUROC 0.967 and 0.976) with output
 equivalence 0.999; on VisA and the AI4I~2020 task, output equivalence is 1.000,
 so the measured system gains carry no accuracy penalty. Table~\ref{tab:industrial_accuracy}
 summarizes the dataset, model, accuracy, and equivalence results, and the
-evaluation harness is released as \texttt{../artifact/eval\_industrial.py}.
+evaluation harness is released as \texttt{../artifact/eval\_industrial.py}.}
 
 This task tests semantic preservation on named dataset items, separately from the synthetic-trace study; each populated row carries its dataset version, split, preprocessing, sample count, precision, tolerance, and failed-item denominator, and rows lacking provenance are omitted.
 
@@ -227,4 +227,4 @@ This task tests semantic preservation on named dataset items, separately from th
 
 % =====================================================
 \subsection{Orchestration Overhead Analysis}
-We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms, aggregating metric sampling, regime classification, and policy application (admission, prefetch, and eviction decisions); the per-component breakdown is released with the artifact. Against the measured PyTorch median end-to-end latency of 871.6\,ms (Table~\ref{tab:latency_percentiles}) this is $1.68/871.6\approx0.19\%$, and worst-case across all evaluated configurations it remains under 3.8\% of total inference latency. This overhead is small relative to the sub-second workload but workload dependent, and must not be compared with or used to support a 2~ms deadline.
+\rev{We instrumented the RAMSES control plane (the Regime Analyzer plus the Policy Engine, Fig.~\ref{fig:rameses_architecture}) and measured per-request overhead. Average orchestration overhead came out to 1.68\,ms, aggregating metric sampling, regime classification, and policy application (admission, prefetch, and eviction decisions); the per-component breakdown is released with the artifact. Against the measured PyTorch median end-to-end latency of 871.6\,ms (Table~\ref{tab:latency_percentiles}) this is $1.68/871.6\approx0.19\%$, and worst-case across all evaluated configurations it remains under 3.8\% of total inference latency. This overhead is small relative to the sub-second workload but workload dependent, and must not be compared with or used to support a 2~ms deadline.}

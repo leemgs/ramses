@@ -70,7 +70,7 @@ scoped as GPU-only with a PDU rank cross-check.
 - **Single-node scope.** The contribution and title are scoped to single-node
   serving; unsupported multi-GPU/fleet generalization was removed and the
   two-GPU results are explicitly bounded (Section IV, *Multi-GPU Scope*).
-- **Trace scripts during review.** `../code/generate_trace.py` is included
+- **Trace scripts during review.** `../artifact/generate_trace.py` is included
   and referenced in the text; the schedule regenerates deterministically from
   the published seed and parameters.
 - **Duplicate equation / clean build.** The duplicated transfer equation was
@@ -113,7 +113,7 @@ scoped as GPU-only with a PDU rank cross-check.
    (scoring/continuation/TTFT/generation) with model, precision, lengths,
    batch, concurrency, and count; the absolute median/P95/P99/P99.9/max table
    (Table~\ref{tab:latency_percentiles}) is generated directly from the
-   16,000-record raw log in `code/data/actual/raw.jsonl`.
+   16,000-record raw log in `artifact/data/actual/raw.jsonl`.
 2. **Circular threshold / convexity.** Replaced by independent observables and
    operational labels; `α_critical` no longer appears anywhere.
 3. **Additive vs. asynchronous.** The model now uses a `max{·}` overlap term,
@@ -158,9 +158,9 @@ scoped as GPU-only with a PDU rank cross-check.
     re-verification of all records against publisher pages.
 11. **Energy.** The primary energy results are now **synchronized whole-node**
     measurements: GPU (NVML) plus CPU-package and DRAM (RAPL) integrated per
-    request on a shared clock by `code/collect_energy.py`, with idle subtraction
+    request on a shared clock by `artifact/collect_energy.py`, with idle subtraction
     and a PDU rank cross-check (Kendall τ = 1.0). Measured across the node,
     energy per token drops 46.7%, energy per inference 46.7%, and the EDP 69.6%
     (Table~\ref{tab:energy}); raw per-request energy is in
-    `code/data/actual/raw.jsonl`. NVMe-rail power and certified rack-level
+    `artifact/data/actual/raw.jsonl`. NVMe-rail power and certified rack-level
     absolute accuracy remain future work.

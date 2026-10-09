@@ -16,6 +16,6 @@ cd paper
 latexmk -pdf main.tex
 ```
 
-The executable artifact and its input data live in the sibling `../code/`
+The executable artifact and its input data live in the sibling `../artifact/`
 directory. Run its generators from the repository root as documented in
-`../code/README.md`.
+`../artifact/README.md`.

@@ -1,4 +1,4 @@
-% Auto-populated by ../code/make_tables.py from measured (alpha,beta,predicted).
+% Auto-populated by ../artifact/make_tables.py from measured (alpha,beta,predicted).
 % Body rows: System & alpha & beta & MAE (ms) & RMSE (ms) & Prefetch hit rate.
 \begin{table}[t]
 \centering
@@ -9,7 +9,7 @@ hit rate. \capinfo}
 \label{tab:model_validation}
 \IfFileExists{tables/model_validation_body.tex}
   {\def\generatedtablebody{\input{tables/model_validation_body.tex}}}
-  {\def\generatedtablebody{\multicolumn{6}{c}{\emph{Generated from measured counters via \texttt{../code/make\_tables.py}.}}}}
+  {\def\generatedtablebody{\multicolumn{6}{c}{\emph{Generated from measured counters via \texttt{../artifact/make\_tables.py}.}}}}
 \footnotesize
 \begin{tabular}{lccccc}
 \toprule

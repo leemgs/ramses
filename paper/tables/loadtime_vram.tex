@@ -1,4 +1,4 @@
-% Auto-populated by code/make_tables.py from code/data/actual/loadtime_vram.csv.
+% Auto-populated by artifact/make_tables.py from artifact/data/actual/loadtime_vram.csv.
 % Body rows: System & Load-time (s) & Peak VRAM (GB).
 \begin{table}[t]
 \centering
@@ -9,7 +9,7 @@ requests each) on the Llama-4 17B workload. RAMSES reduces mean load time by
 \label{tab:loadtime_vram}
 \IfFileExists{tables/loadtime_vram_body.tex}
   {\def\generatedtablebody{\input{tables/loadtime_vram_body.tex}}}
-  {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from raw measurements via \texttt{code/make\_tables.py}.}}}}
+  {\def\generatedtablebody{\multicolumn{3}{c}{\emph{Generated from raw measurements via \texttt{artifact/make\_tables.py}.}}}}
 \footnotesize
 \begin{tabular}{lcc}
 \toprule

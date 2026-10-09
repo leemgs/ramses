@@ -27,6 +27,6 @@ original evaluation images or run inventory and cannot be recovered from
 request-level measurements alone.
 
 Raw attachments in the reproducibility package: request-level JSONL
-conforming to `code/measurement-schema.json`, stdout/stderr, environment
+conforming to `artifact/measurement-schema.json`, stdout/stderr, environment
 lockfile, GPU/driver/filesystem inventory, trace hash, seeds, per-run power
 samples, and failure log.

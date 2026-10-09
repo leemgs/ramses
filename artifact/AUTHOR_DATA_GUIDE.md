@@ -56,11 +56,11 @@ MAE/RMSE·에너지 집계), `compute_stats.py`(평균·표준편차·95% CI·�
 ```
 
 ### B2. 전체 노드 에너지 측정 (R3-11 — 가장 중요)
-GPU-only NVML만으로는 부족합니다. **`code/collect_energy.py`** 가 동일 monotonic
+GPU-only NVML만으로는 부족합니다. **`artifact/collect_energy.py`** 가 동일 monotonic
 클록으로 GPU(NVML)+CPU package/DRAM(RAPL)을 적분하고 카운터 wrap과 idle 차감을
 처리해 `gpu_energy_j`/`node_energy_j`를 산출합니다.
 ```sh
-python3 code/collect_energy.py --idle-seconds 5 --out energy.json -- \
+python3 artifact/collect_energy.py --idle-seconds 5 --out energy.json -- \
         python run_inference.py --system ramses ...
 ```
 - **NVMe**: 드라이브 전력(가능하면 PDU 분해) 또는 실측 전력 모델을 컴포넌트에 추가.
@@ -71,11 +71,11 @@ python3 code/collect_energy.py --idle-seconds 5 --out energy.json -- \
 
 ### B3. 파이프라인 실행
 ```sh
-code/preflight.sh                                   # 하드웨어/툴 점검 (fail-closed)
-python3 code/analyze_results.py code/data/actual/raw.jsonl code/data/actual/summary.csv
-python3 code/compute_stats.py code/data/actual/raw.jsonl code/data/actual/stats.csv \
+artifact/preflight.sh                                   # 하드웨어/툴 점검 (fail-closed)
+python3 artifact/analyze_results.py artifact/data/actual/raw.jsonl artifact/data/actual/summary.csv
+python3 artifact/compute_stats.py artifact/data/actual/raw.jsonl artifact/data/actual/stats.csv \
         --metric latency_ms --baseline default --compare ramses
-python3 -m unittest discover -s code/tests -v
+python3 -m unittest discover -s artifact/tests -v
 ```
 - `summary.csv`: (system,task,config)별 median/P95/P99/P99.9/max, MAE/RMSE,
   prefetch hit rate, 방향별 트래픽, energy/request, energy/token, EDP.
@@ -132,22 +132,22 @@ hardware/software-in-the-loop.
 - 각 태스크에 dataset 버전, 샘플 수, 프롬프트/전처리, precision, expert/tensor
   placement, concurrency, request mix를 명시.
 
-### C2-bis. 바로 실행 가능한 백엔드 (`code/mvtec_vit.py`)
-`code/mvtec_vit.py` 가 MVTec AD 로더 + ViT(deep-feature-distance) 이상탐지를
+### C2-bis. 바로 실행 가능한 백엔드 (`artifact/mvtec_vit.py`)
+`artifact/mvtec_vit.py` 가 MVTec AD 로더 + ViT(deep-feature-distance) 이상탐지를
 구현합니다. LD_PRELOAD는 프로세스 전역이므로 **모드별 별도 프로세스 → compare**로
 정확도·출력동등성을 산출합니다:
 ```sh
-MVTEC_CATEGORY=bottle python3 code/eval_industrial.py --backend mvtec_vit \
+MVTEC_CATEGORY=bottle python3 artifact/eval_industrial.py --backend mvtec_vit \
     --data-root /path/to/mvtec --mode single --serving-mode baseline \
     --outputs-file out_baseline.json
 LD_PRELOAD=/path/to/ramses.so MVTEC_CATEGORY=bottle \
-    python3 code/eval_industrial.py --backend mvtec_vit \
+    python3 artifact/eval_industrial.py --backend mvtec_vit \
     --data-root /path/to/mvtec --mode single --serving-mode ramses \
     --outputs-file out_ramses.json
-python3 code/eval_industrial.py --compare out_baseline.json out_ramses.json \
-    --out-csv code/data/actual/industrial_accuracy.csv
+python3 artifact/eval_industrial.py --compare out_baseline.json out_ramses.json \
+    --out-csv artifact/data/actual/industrial_accuracy.csv
 ```
-그런 다음 `make_tables.py --industrial code/data/actual/industrial_accuracy.csv`로
+그런 다음 `make_tables.py --industrial artifact/data/actual/industrial_accuracy.csv`로
 `paper/tables/industrial_body.tex`를 생성하면 Table가 채워집니다.
 
 ### C3. 출력 동등성(가장 방어적인 "정확도" 논거)
@@ -176,7 +176,7 @@ RAMSES는 서빙 최적화이지 모델 변경이 아니므로, **동일 입력�
 ---
 
 ## 제출 전 최종 체크리스트
-- [ ] `raw.jsonl` (모든 system×task×config×5run, cold/warm) 를 `code/data/`에 포함
+- [ ] `raw.jsonl` (모든 system×task×config×5run, cold/warm) 를 `artifact/data/`에 포함
 - [ ] `summary.csv`, `stats.csv` 재생성 후 본문 수치와 일치 확인
 - [ ] whole-node 에너지(J/req·J/token·EDP) 표 승격
 - [ ] policy-off·민감도 결과 표/그림 추가

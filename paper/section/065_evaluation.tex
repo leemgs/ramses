@@ -1,6 +1,6 @@
 \section{Evaluation}\label{sec:results}
 
-We evaluate RAMSES against existing serving stacks. Every experiment runs five times on the same hardware; tables report absolute request-level percentiles and run-level means with 95\% confidence intervals. All request-level latency, whole-node energy, operating-model, controller-ablation, and per-model results are computed by the released scripts from \texttt{code/data/actual/raw.jsonl}---16{,}000 records over eight configurations, five models, four task types, and five restarts---and the load-time/VRAM (Table~\ref{tab:loadtime_vram}), sensitivity, industrial-accuracy, and 72-hour QoS (Table~\ref{tab:qos}) series are released as measured CSVs, so every summary traces back to primary data rather than normalized plots.
+We evaluate RAMSES against existing serving stacks. Every experiment runs five times on the same hardware; tables report absolute request-level percentiles and run-level means with 95\% confidence intervals. All request-level latency, whole-node energy, operating-model, controller-ablation, and per-model results are computed by the released scripts from \texttt{artifact/data/actual/raw.jsonl}---16{,}000 records over eight configurations, five models, four task types, and five restarts---and the load-time/VRAM (Table~\ref{tab:loadtime_vram}), sensitivity, industrial-accuracy, and 72-hour QoS (Table~\ref{tab:qos}) series are released as measured CSVs, so every summary traces back to primary data rather than normalized plots.
 
 \subsection{Research Questions and Claim--Evidence Alignment}
 We organize the evaluation around four questions tied directly to the
@@ -12,7 +12,7 @@ contributions in Section~\ref{sec:introduction}:
 \item[RQ4: Semantic preservation.] Does relocation preserve outputs and named-task accuracy, paired on identical inputs?
 \end{description}
 
-Values under \texttt{code/data/expected/} are pre-experiment hypotheses used only to size the matrix; they are excluded from every table, figure, test, and claim, and unsupported configurations remain explicitly missing.
+Values under \texttt{artifact/data/expected/} are pre-experiment hypotheses used only to size the matrix; they are excluded from every table, figure, test, and claim, and unsupported configurations remain explicitly missing.
 
 \noindent\textbf{Testbed.}
 Unless stated otherwise, the platform is a laboratory server, not a deployed factory-edge system:
@@ -33,7 +33,7 @@ generation), \emph{continuation} (one warm decode step), \emph{TTFT} (request
 arrival through first emitted token), or \emph{generation} (arrival through the
 final token).  For every task and system we log the model, numerical precision,
 input/output token counts, batch size, concurrency, request count, and run
-identifier, following the schema in \texttt{../code/measurement-schema.json}.
+identifier, following the schema in \texttt{../artifact/measurement-schema.json}.
 From these logs the released analyzer computes absolute median, P95, P99,
 P99.9, and maximum latency per task and system directly from timestamps; no
 value is derived from normalized bars.  Each comparison uses five independently
@@ -74,12 +74,12 @@ reuses the same request trace and seed as its full-system counterpart.
 Energy is integrated on the same monotonic clock as the request telemetry.
 The primary energy results are \emph{synchronized whole-node} measurements: GPU
 energy from NVML and CPU-package and DRAM energy from Intel RAPL are summed over
-the same window by \texttt{code/collect\_energy.py}, so activity that RAMSES
+the same window by \texttt{artifact/collect\_energy.py}, so activity that RAMSES
 shifts from the GPU to the host is captured rather than hidden.  Each run records
 the instrument model, sampling rate, clock alignment, idle-subtraction
 procedure, calibration uncertainty, and dropped-sample count.  The measurement
-schema, collector, and analysis programs are included under \texttt{code/}, and
-the raw per-request energy is in \texttt{code/data/actual/raw.jsonl}.  NVMe rail
+schema, collector, and analysis programs are included under \texttt{artifact/}, and
+the raw per-request energy is in \texttt{artifact/data/actual/raw.jsonl}.  NVMe rail
 power and certified rack-level absolute accuracy (IEC~62053) remain future work.
 
 \noindent\textbf{Metrics.} The evaluation reports model-load time; inference latency (TTFT and sustained throughput); memory-utilization efficiency (VRAM/DRAM occupancy and fragmentation $=1-\mathrm{largest\_free\_block}/\mathrm{total\_free}$); and system stability (VRAM overflows and GPU restarts under sustained load).
@@ -116,7 +116,7 @@ All primary comparisons are scoped to one serving node; two-GPU measurements use
 \subsection{Regime invariance across model architectures}
 
 Across Llama-3 8B, GPT-J 6B, Llama-4 17B, Mixtral 8$\times$7B, and ViT-H/14, RAMSES brings down inference latency by 34--41\% in every configuration we tried (mean 38.9\%), and loading time by 50--59\%.
-Per-run observations and Student-$t$ intervals are in \texttt{code/data/actual/stats.csv}; generalization beyond these five architectures is not claimed.
+Per-run observations and Student-$t$ intervals are in \texttt{artifact/data/actual/stats.csv}; generalization beyond these five architectures is not claimed.
 
 % =====================================================
 \begin{figure}[t]
@@ -219,7 +219,7 @@ image-level accuracies are 0.941 and 0.951 (AUROC 0.967 and 0.976) with output
 equivalence 0.999; on VisA and the AI4I~2020 task, output equivalence is 1.000,
 so the measured system gains carry no accuracy penalty. Table~\ref{tab:industrial_accuracy}
 summarizes the dataset, model, accuracy, and equivalence results, and the
-evaluation harness is released as \texttt{../code/eval\_industrial.py}.
+evaluation harness is released as \texttt{../artifact/eval\_industrial.py}.
 
 This task tests semantic preservation on named dataset items, separately from the synthetic-trace study; each populated row carries its dataset version, split, preprocessing, sample count, precision, tolerance, and failed-item denominator, and rows lacking provenance are omitted.
 

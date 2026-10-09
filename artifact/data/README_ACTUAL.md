@@ -9,11 +9,11 @@ These files are **measured results** and may be used as evidence or cited only w
 Generate the summaries and statistical results with:
 
 ```sh
-python3 code/analyze_results.py code/data/actual/raw.jsonl \
-        code/data/actual/summary.csv
+python3 artifact/analyze_results.py artifact/data/actual/raw.jsonl \
+        artifact/data/actual/summary.csv
 
-python3 code/compute_stats.py code/data/actual/raw.jsonl \
-        code/data/actual/stats.csv --baseline default --compare ramses
+python3 artifact/compute_stats.py artifact/data/actual/raw.jsonl \
+        artifact/data/actual/stats.csv --baseline default --compare ramses
 ```
 
 The measurements were collected using batch size 1, concurrency 1, FP16, two A100 80 GB-class GPUs, 512 GB DRAM, and Gen4 NVMe storage.
@@ -33,14 +33,14 @@ This marker identifies the row as a measured observation. It does not replace th
 Place real request-level logs in:
 
 ```text
-code/data/actual/raw.jsonl
+artifact/data/actual/raw.jsonl
 ```
 
 Then generate:
 
 ```text
-code/data/actual/summary.csv
-code/data/actual/stats.csv
+artifact/data/actual/summary.csv
+artifact/data/actual/stats.csv
 ```
 
 Keep the following provenance information alongside the measurements:
@@ -58,9 +58,9 @@ Keep the following provenance information alongside the measurements:
 Compare the measured results with the corresponding expected dataset without overwriting either dataset:
 
 ```sh
-python3 code/compare_actual.py code/data/expected/summary.csv \
-        code/data/actual/summary.csv \
-        code/data/actual/comparison.csv
+python3 artifact/compare_actual.py artifact/data/expected/summary.csv \
+        artifact/data/actual/summary.csv \
+        artifact/data/actual/comparison.csv
 ```
 
 The comparison report retains the union of both matrices and labels each row as:

@@ -1,4 +1,4 @@
-% Auto-populated by ../code/make_tables.py from measured request-level logs.
+% Auto-populated by ../artifact/make_tables.py from measured request-level logs.
 % Body rows: System & Median & P95 & P99 & P99.9 & Max (ms).
 \begin{table}[t]
 \centering
@@ -8,7 +8,7 @@ Llama-4 17B workload, from raw request-level logs. \capinfo}
 \label{tab:latency_percentiles}
 \IfFileExists{tables/latency_percentiles_body.tex}
   {\def\generatedtablebody{\input{tables/latency_percentiles_body.tex}}}
-  {\def\generatedtablebody{\multicolumn{6}{c}{\emph{Generated from raw measurements via \texttt{../code/make\_tables.py}.}}}}
+  {\def\generatedtablebody{\multicolumn{6}{c}{\emph{Generated from raw measurements via \texttt{../artifact/make\_tables.py}.}}}}
 \footnotesize
 \begin{tabular}{lccccc}
 \toprule

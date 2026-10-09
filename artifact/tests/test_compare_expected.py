@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "code" / "compare_expected.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "compare_expected.py"
 KEYS = ("system", "task", "model", "precision", "input_tokens",
         "output_tokens", "batch", "concurrency")
 METRICS = ("p50_ms", "p95_ms", "p99_ms", "energy_per_request_j")

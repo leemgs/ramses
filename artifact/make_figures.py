@@ -15,16 +15,17 @@ Figures:
   4. sensitivity.png           -- p99 vs block size / controller parameter sweep.
 
 Usage:
-    python3 code/make_figures.py --summary code/data/actual/summary.csv \
-        --stats code/data/actual/stats.csv --sensitivity code/data/actual/sensitivity.csv \
+    python3 artifact/make_figures.py --summary artifact/data/actual/summary.csv \
+        --stats artifact/data/actual/stats.csv --sensitivity artifact/data/actual/sensitivity.csv \
         --outdir paper/figures --task ttft
 
 Requires matplotlib and numpy in the author's environment.
 """
 import argparse, csv, os
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(REPO_ROOT, "code", "data", "actual")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+DATA_DIR = os.path.join(SCRIPT_DIR, "data", "actual")
 PAPER_FIGURES = os.path.join(REPO_ROOT, "paper", "figures")
 
 

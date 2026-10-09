@@ -12,11 +12,11 @@ They are **not measured results, not evidence, and not suitable for citation**.
 Regenerate them and their summaries with:
 
 ```sh
-python3 code/generate_expected_data.py
-python3 code/analyze_results.py code/data/expected/raw.jsonl \
-        code/data/expected/summary.csv
-python3 code/compute_stats.py code/data/expected/raw.jsonl \
-        code/data/expected/stats.csv --baseline default --compare ramses
+python3 artifact/generate_expected_data.py
+python3 artifact/analyze_results.py artifact/data/expected/raw.jsonl \
+        artifact/data/expected/summary.csv
+python3 artifact/compute_stats.py artifact/data/expected/raw.jsonl \
+        artifact/data/expected/stats.csv --baseline default --compare ramses
 ```
 
 The projections assume batch 1, concurrency 1, FP16, a two-A100 80 GB-class
@@ -41,8 +41,8 @@ software/container digests, and power telemetry alongside the measurements.
 Compare matching configurations without overwriting either dataset:
 
 ```sh
-python3 code/compare_expected.py code/data/expected/summary.csv \
-        code/data/actual/summary.csv code/data/actual/comparison.csv
+python3 artifact/compare_expected.py artifact/data/expected/summary.csv \
+        artifact/data/actual/summary.csv artifact/data/actual/comparison.csv
 ```
 
 The comparison report retains the union of both matrices and labels every row

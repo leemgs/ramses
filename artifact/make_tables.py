@@ -8,16 +8,17 @@ If a required CSV is missing the corresponding table body is not generated, and
 the LaTeX wrapper's \\IfFileExists guard keeps the paper compilable.
 
 Usage:
-    python3 code/make_tables.py --summary code/data/actual/summary.csv \
-        --stats code/data/actual/stats.csv --outdir paper/tables \
+    python3 artifact/make_tables.py --summary artifact/data/actual/summary.csv \
+        --stats artifact/data/actual/stats.csv --outdir paper/tables \
         --task ttft --model llama4-17b
 
 Standard library only.
 """
 import argparse, csv, os
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(REPO_ROOT, "code", "data", "actual")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+DATA_DIR = os.path.join(SCRIPT_DIR, "data", "actual")
 PAPER_TABLES = os.path.join(REPO_ROOT, "paper", "tables")
 
 # Display order and human labels for systems.
